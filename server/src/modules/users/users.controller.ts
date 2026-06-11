@@ -17,7 +17,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { User } from './user.entity';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard) 
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -28,12 +28,10 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-
   @Get('me')
   getMe(@CurrentUser() user: User) {
     return this.usersService.findById(user.id);
   }
-
 
   @Get(':id')
   @UseGuards(RolesGuard)
@@ -44,10 +42,7 @@ export class UsersController {
 
   // PATCH /users/me — Cập nhật thông tin cá nhân
   @Patch('me')
-  updateMe(
-    @CurrentUser() user: User,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
+  updateMe(@CurrentUser() user: User, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(user.id, updateUserDto);
   }
 

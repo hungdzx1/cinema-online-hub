@@ -10,48 +10,54 @@ export class UsersService {
     private userRepository: Repository<User>,
   ) {}
 
-
+  // Lấy tất cả users (Admin)
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
-      select: ['id', 'username', 'email', 'role', 'isBanned', 'createdAt', 'lastLogin'],
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        isBanned: true,
+        createdAt: true,
+        lastLogin: true,
+      },
     });
   }
 
-  
+  // Tìm user theo ID
   async findById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Không tìm thấy user #${id}`);
     return user;
   }
 
-  
-  async findByEmail(email: string): Promise<User> {
+  // Tìm user theo email (dùng cho Auth) — có thể trả null
+  async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  // Tìm user theo username (dùng cho Auth)
-  async findByUsername(username: string): Promise<User> {
+  // Tìm user theo username (dùng cho Auth) — có thể trả null
+  async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { username } });
   }
 
- 
+  // Cập nhật thông tin cá nhân
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, updateUserDto);
     return this.userRepository.save(user);
   }
 
+  // Cập nhật lastLogin khi đăng nhập
   async updateLastLogin(id: number): Promise<void> {
     await this.userRepository.update(id, { lastLogin: new Date() });
   }
-
- 
   async toggleBan(id: number): Promise<User> {
     const user = await this.findById(id);
     user.isBanned = !user.isBanned;
     return this.userRepository.save(user);
   }
-
 
   async remove(id: number): Promise<void> {
     const user = await this.findById(id);
