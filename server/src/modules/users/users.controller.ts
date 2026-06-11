@@ -17,11 +17,10 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { User } from './user.entity';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard) // Tất cả routes cần đăng nhập
+@UseGuards(JwtAuthGuard) 
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // GET /users — Lấy tất cả users (Admin only)
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -29,13 +28,13 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  // GET /users/me — Xem thông tin cá nhân
+
   @Get('me')
   getMe(@CurrentUser() user: User) {
     return this.usersService.findById(user.id);
   }
 
-  // GET /users/:id — Xem thông tin user (Admin)
+
   @Get(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -52,7 +51,6 @@ export class UsersController {
     return this.usersService.update(user.id, updateUserDto);
   }
 
-  // PATCH /users/:id/ban — Khóa/Mở khóa tài khoản (Admin)
   @Patch(':id/ban')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -60,7 +58,6 @@ export class UsersController {
     return this.usersService.toggleBan(+id);
   }
 
-  // DELETE /users/:id — Xóa user (Admin)
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)

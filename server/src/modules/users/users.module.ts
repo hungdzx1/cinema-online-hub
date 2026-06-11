@@ -5,9 +5,9 @@ import { userProviders } from './user.provider';
 import { DatabaseModule } from '../../database/database.module';
 
 @Module({
-  imports: [DatabaseModule],           // Cần DatabaseModule để có DATA_SOURCE
+  imports: [DatabaseModule],          
   controllers: [UsersController],
   providers: [...userProviders, UsersService],
-  exports: [UsersService],             // Export để AuthModule dùng được
+  exports: [UsersService],             
 })
 export class UsersModule {}
