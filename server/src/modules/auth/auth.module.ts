@@ -9,12 +9,12 @@ import { DatabaseModule } from '../../database/Database.module';
 
 @Module({
   imports: [
-    DatabaseModule, // Cần USER_REPOSITORY
-    UsersModule, // Dùng UsersService (đã export)
+    DatabaseModule,
+    UsersModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: 900 }, // 15 phút = 900 giây
+      signOptions: { expiresIn: 900 },
     }),
   ],
   controllers: [AuthController],

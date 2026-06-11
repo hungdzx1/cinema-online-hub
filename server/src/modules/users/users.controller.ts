@@ -40,7 +40,6 @@ export class UsersController {
     return this.usersService.findById(+id);
   }
 
-  // PATCH /users/me — Cập nhật thông tin cá nhân
   @Patch('me')
   updateMe(@CurrentUser() user: User, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(user.id, updateUserDto);

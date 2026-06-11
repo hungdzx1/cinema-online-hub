@@ -113,7 +113,6 @@ export class AuthService {
     return { message: 'Đổi mật khẩu thành công' };
   }
 
-  // ── TẠO JWT TOKEN ────────────────────────────────────
   private generateToken(user: User): string {
     const payload: JwtPayload = {
       sub: user.id,
