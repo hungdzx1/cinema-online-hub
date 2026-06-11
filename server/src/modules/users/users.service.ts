@@ -10,7 +10,6 @@ export class UsersService {
     private userRepository: Repository<User>,
   ) {}
 
-  // Lấy tất cả users (Admin)
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
       select: {
@@ -25,7 +24,6 @@ export class UsersService {
     });
   }
 
-  // Tìm user theo ID
   async findById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Không tìm thấy user #${id}`);
@@ -49,7 +47,6 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  // Cập nhật lastLogin khi đăng nhập
   async updateLastLogin(id: number): Promise<void> {
     await this.userRepository.update(id, { lastLogin: new Date() });
   }
