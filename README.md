@@ -18,19 +18,19 @@ DELETE /users/:id     - Delete
 ### 📸 Hình ảnh minh họa chi tiết
 
 #### 1. Read User
-[![Read User](https://githubusercontent.com)](https://github.com/hungdzx1/cinema-online-hub/blob/main/1.JPG)
+[![Read User](https://github.com/hungdzx1/cinema-online-hub/blob/main/1.JPG)
 
 #### 2. Update User
-[![Update User](https://githubusercontent.com)](https://github.com/hungdzx1/cinema-online-hub/blob/main/2.JPG)
+[![Update User](https://github.com/hungdzx1/cinema-online-hub/blob/main/2.JPG)
 
 #### 3. Delete User
-[![Update User](https://githubusercontent.com)](https://github.com/hungdzx1/cinema-online-hub/blob/main/3.JPG)
+[![Update User](https://github.com/hungdzx1/cinema-online-hub/blob/main/3.JPG)
 
 #### 4. Toggle Ban
-[![Update User](https://githubusercontent.com)](https://github.com/hungdzx1/cinema-online-hub/blob/main/4.JPG)
+[![Update User](https://github.com/hungdzx1/cinema-online-hub/blob/main/4.JPG)
 
 #### 5. Create (ở Auth)
-[![Update User](https://githubusercontent.com)](https://github.com/hungdzx1/cinema-online-hub/blob/main/5.JPG)
+[![Update User](https://github.com/hungdzx1/cinema-online-hub/blob/main/5.JPG)
 
 
 
