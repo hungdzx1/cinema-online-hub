@@ -51,14 +51,19 @@ CREATE TABLE IF NOT EXISTS movie_genres (
 -- 6. BẢNG TẬP PHIM
 CREATE TABLE IF NOT EXISTS episodes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    movie_id UUID REFERENCES movies(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    episode_order INT NOT NULL,
-    video_url VARCHAR(500),
-    duration INT, -- Tính bằng giây
-    view_count INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    movie_id ID REFERENCES movies(id) ON DELETE CASCADE,
+    episode_number int not null,
+    title varchar(255) NULL,
+    embed_url varchar(500) not null,
+    sever_name varchar(100) null default 'Sever 1';
+    skip_intro_seconds int not null default 0,
+    duration_seconds int not null default 0,
+    view_count INT not null DEFAULT 0,
+    created_at DATETIME not null default CURRENT_TIMESTAMP,
+    updated_at DATETIME not null default CURRENT_TIMESTAMP on update  CURRENT_TIMESTAMP ,
+    CONSTRAINT fk_episode_movie foreign key (movie_id) references movie(id) on ON DELETE CASCADE,
+  UNIQUE KEY uq_episode (movie_id, episode_number, server_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 7. BẢNG BÌNH LUẬN
 CREATE TABLE IF NOT EXISTS comments (
