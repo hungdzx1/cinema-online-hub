@@ -2,8 +2,10 @@
 
 **Tác giả:** Trần Quốc Việt Hùng  
 **Đối tượng:** Người dùng (User)
+
+
 **Tác giả:** Bùi Quang Hưng
-**Đối tượng:** phim (Movie)
+**Đối tượng:** phim (Movie) ( Activity Diagram ở word)
 
 
 ### 🚀 Các chức năng hệ thống (6 chức năng)
