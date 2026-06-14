@@ -16,9 +16,9 @@ có 6 chức năng :
      ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/3.JPG)
 
   4. toggle ban
-       ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/4.JPG)
+     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/4.JPG)
   5. Creat ở auth
-            ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/5.JPG)
+     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/5.JPG)
      
 
      
