@@ -1,27 +1,36 @@
-# cinema-online-hub
-Trần Quốc Việt Hùng: đối tượng user
-có 6 chức năng :
-    Read All (GET /users)
-* Read One (GET /users/:id)
-* Read Me (GET /users/me)
-* Update (PATCH /users/me)
-* Toggle Ban (PATCH /users/:id/ban)
-* Delete (DELETE /users/:id)
+# Cinema Online Hub
 
-  1. READ USER
-     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/edit/main/1.JPG)
-  2. Update user
-     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/2.JPG)
-  3. delete user
-     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/3.JPG)
+**Tác giả:** Trần Quốc Việt Hùng  
+**Đối tượng:** Người dùng (User)
 
-  4. toggle ban
-     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/4.JPG)
-  5. Creat ở auth
-     ![Mô tả ảnh](https://github.com/hungdzx1/cinema-online-hub/blob/main/5.JPG)
-     
+### 🚀 Các chức năng hệ thống (6 chức năng)
+```http
+GET    /users         - Read All
+GET    /users/:id     - Read One
+GET    /users/me      - Read Me
+PATCH  /users/me      - Update
+PATCH  /users/:id/ban - Toggle Ban
+DELETE /users/:id     - Delete
+```
 
-     
+---
+
+### 📸 Hình ảnh minh họa chi tiết
+
+#### 1. Read User
+![Read User](https://githubusercontent.com)
+
+#### 2. Update User
+![Update User](https://githubusercontent.com)
+
+#### 3. Delete User
+![Delete User](https://githubusercontent.com)
+
+#### 4. Toggle Ban
+![Toggle Ban](https://githubusercontent.com)
+
+#### 5. Create (ở Auth)
+![Create Auth](https://githubusercontent.com)
 
 
 
