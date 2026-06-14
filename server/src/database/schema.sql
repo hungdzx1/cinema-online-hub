@@ -31,3 +31,13 @@ CREATE TABLE IF NOT EXISTS episodes (
   UNIQUE KEY uq_episode (movie_id, episode_number, server_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+INSERT INTO episodes (id, movie_id, episode_number, title, embed_url, server_name, duration_seconds) VALUES
+('e1111111-1111-1111-1111-111111111111', 'm1111111-1111-1111-1111-111111111111', 1, 'Tập Full', 'https://player.com/mai-full', 'VIP Server', 7200),
+('e2222222-2222-2222-2222-222222222222', 'm2222222-2222-2222-2222-222222222222', 1, 'Tập 1: Sự biến mất', 'https://player.com/st-ep1', 'Server 1', 3600),
+('e3333333-3333-3333-3333-333333333333', 'm2222222-2222-2222-2222-222222222222', 2, 'Tập 2: Kẻ lạ mặt', 'https://player.com/st-ep2', 'Server 1', 3500);
+
+
+INSERT INTO movies (id, title, slug, description, poster_url, backdrop_url, trailer_url, type, status, release_year, country_id) VALUES
+('m1111111-1111-1111-1111-111111111111', 'Mai', 'mai-2024', 'Phim điện ảnh tình cảm gia đình...', 'mai-poster.jpg', 'mai-bg.jpg', 'youtube.com/mai', 'SINGLE', 'COMPLETED', 2024, 1),
+('m2222222-2222-2222-2222-222222222222', 'Stranger Things', 'stranger-things', 'Một nhóm bạn trẻ khám phá thế giới song song...', 'st-poster.jpg', 'st-bg.jpg', 'youtube.com/st', 'SERIES', 'ONGOING', 2022, 2);
