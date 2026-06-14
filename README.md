@@ -2,6 +2,9 @@
 
 **Tác giả:** Trần Quốc Việt Hùng  
 **Đối tượng:** Người dùng (User)
+**Tác giả:** Bùi Quang Hưng
+**Đối tượng:** phim (Movie)
+
 
 ### 🚀 Các chức năng hệ thống (6 chức năng)
 ```http
