@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
+import * as fs from 'fs';
 
-// Provider cung cấp DATA_SOURCE cho toàn app (giống pattern cô dạy)
 export const databaseProviders = [
   {
     provide: 'DATA_SOURCE',
@@ -14,15 +14,27 @@ export const databaseProviders = [
         database: process.env.DB_NAME,
 
         ssl: {
-          rejectUnauthorized: false,
+          ca: fs.readFileSync('ca.pem'),
+        },
+        extra: {
+          ssl: {
+            ca: fs.readFileSync('ca.pem'),
+          },
         },
 
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
 
-        synchronize: true,
+        synchronize: false,
       });
 
-      return dataSource.initialize();
+      try {
+        return await dataSource.initialize();
+      } catch (err) {
+        // Provide more context in logs for debugging connection/handshake errors
+
+        console.error('Failed to initialize DataSource:', err);
+        throw err;
+      }
     },
   },
 ];
