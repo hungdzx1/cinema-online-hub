@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { Movie } from './movies.entity';
 
-@Injectable()
-export class Movies {}
+export const moviesProviders = [
+  {
+    provide: 'MOVIE_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(Movie),
+    inject: ['DATA_SOURCE'],
+  },
+];

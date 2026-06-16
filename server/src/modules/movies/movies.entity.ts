@@ -6,7 +6,7 @@ export class Movie {
   id: string;
 
   @Column({ type: 'varchar', length: 255 })
-  title: string;
+  title: string | undefined;
 
   @Column({ type: 'varchar', length: 255, unique: true })
   slug: string;

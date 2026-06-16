@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Repository, DeepPartial } from 'typeorm';
 import { Movie } from './movies.entity';
-import { CreateMovieDto } from './dto/create-movie.dto';
-import { UpdateMovieDto } from './dto/update-movie.dto';
+import { InjectRepository } from '@nestjs/typeorm'; // Sử dụng InjectRepository để inject repository của Movie
+// import { CreateMovieDto } from './dto/create-movie.dto';
+// import { UpdateMovieDto } from './dto/update-movie.dto';
 
 @Injectable()
 export class MoviesService {
@@ -12,7 +12,7 @@ export class MoviesService {
     private readonly movieRepository: Repository<Movie>,
   ) {}
 
-  async create(createMovieDto: CreateMovieDto): Promise<Movie> {
+  async create(createMovieDto: DeepPartial<Movie>): Promise<Movie> {
     const newMovie = this.movieRepository.create(createMovieDto);
     return await this.movieRepository.save(newMovie);
   }
@@ -31,7 +31,7 @@ export class MoviesService {
     return movie;
   }
 
-  async update(id: string, updateMovieDto: UpdateMovieDto): Promise<Movie> {
+  async update(id: string, updateMovieDto: any): Promise<Movie> {
     const movie = await this.findOne(id); // Kiểm tra xem có tồn tại không
     Object.assign(movie, updateMovieDto);
     return await this.movieRepository.save(movie);
