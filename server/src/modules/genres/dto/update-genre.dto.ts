@@ -1,5 +1,12 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateGenreDto } from './create-genre.dto';
+import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
 
-// PartialType làm tất cả field của CreateGenreDto thành optional
-export class UpdateGenreDto extends PartialType(CreateGenreDto) {}
+export class UpdateGenreDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isVisible?: boolean;
+}

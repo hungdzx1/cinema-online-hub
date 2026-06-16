@@ -36,8 +36,6 @@ export const databaseProviders = [
       try {
         return await dataSource.initialize();
       } catch (err) {
-        // Provide more context in logs for debugging connection/handshake errors
-
         console.error('Failed to initialize DataSource:', err);
         throw err;
       }
