@@ -1,16 +1,8 @@
--- ============================================================
--- PHIMPLAY24 - WEB XEM PHIM TRỰC TUYẾN
--- Cơ sở dữ liệu: MySQL 8 (Aiven Cloud)
--- Nhóm 4
--- ============================================================
 
 -- Dùng bảng mã utf8mb4 để hỗ trợ tiếng Việt + emoji
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- ============================================================
--- 1. BẢNG NGƯỜI DÙNG (users)
--- ============================================================
 CREATE TABLE IF NOT EXISTS users (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(50)  NOT NULL UNIQUE,
@@ -24,9 +16,6 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 2. BẢNG REFRESH TOKEN (refresh_tokens) - JWT
--- ============================================================
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   user_id     INT NOT NULL,
@@ -52,18 +41,14 @@ CREATE TABLE IF NOT EXISTS genres (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 4. BẢNG QUỐC GIA (countries)
--- ============================================================
+
 CREATE TABLE IF NOT EXISTS countries (
   id   INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   slug VARCHAR(120) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 5. BẢNG PHIM (movies)
--- ============================================================
+
 CREATE TABLE IF NOT EXISTS movies (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   title           VARCHAR(255) NOT NULL,
@@ -237,10 +222,6 @@ CREATE TABLE IF NOT EXISTS error_reports (
   CONSTRAINT fk_report_episode FOREIGN KEY (episode_id)
     REFERENCES episodes(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================
--- 15. BẢNG THÔNG BÁO (notifications)
--- ============================================================
 CREATE TABLE IF NOT EXISTS notifications (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   user_id    INT NOT NULL,
@@ -256,6 +237,3 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ============================================================
--- HẾT - 15 BẢNG
--- ============================================================

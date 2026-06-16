@@ -5,6 +5,12 @@ export const databaseProviders = [
   {
     provide: 'DATA_SOURCE',
     useFactory: async () => {
+      console.log(
+        '[DB] Initializing with host:',
+        process.env.DB_HOST,
+        'port:',
+        process.env.DB_PORT,
+      );
       const dataSource = new DataSource({
         type: 'mysql',
         host: process.env.DB_HOST,
