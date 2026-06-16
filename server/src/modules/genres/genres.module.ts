@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GenresController } from './genres.controller';
 import { GenresService } from './genres.service';
-import { genreProviders } from './genre.provider';
-import { DatabaseModule } from '../../database/Database.module';
+import { Genre } from './genre.entity';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [TypeOrmModule.forFeature([Genre])], // ← Cách 1
   controllers: [GenresController],
-  providers: [...genreProviders, GenresService],
-  exports: [GenresService], // Export cho MoviesModule dùng (gán thể loại cho phim)
+  providers: [GenresService],
+  exports: [GenresService],
 })
 export class GenresModule {}

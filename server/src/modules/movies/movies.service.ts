@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DeepPartial } from 'typeorm';
 import { Movie } from './movies.entity';
 import { InjectRepository } from '@nestjs/typeorm'; // Sử dụng InjectRepository để inject repository của Movie
@@ -19,7 +19,7 @@ export class MoviesService {
 
   async findAll(): Promise<Movie[]> {
     return await this.movieRepository.find({
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 

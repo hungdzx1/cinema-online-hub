@@ -1,4 +1,5 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -6,7 +7,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject('USER_REPOSITORY')
+    @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
 
@@ -30,17 +31,14 @@ export class UsersService {
     return user;
   }
 
-  // Tìm user theo email (dùng cho Auth) — có thể trả null
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  // Tìm user theo username (dùng cho Auth) — có thể trả null
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { username } });
   }
 
-  // Cập nhật thông tin cá nhân
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, updateUserDto);
@@ -50,12 +48,14 @@ export class UsersService {
   async updateLastLogin(id: number): Promise<void> {
     await this.userRepository.update(id, { lastLogin: new Date() });
   }
+
   async toggleBan(id: number): Promise<User> {
     const user = await this.findById(id);
     user.isBanned = !user.isBanned;
     return this.userRepository.save(user);
   }
 
+  // Xóa user (Admin)
   async remove(id: number): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.remove(user);

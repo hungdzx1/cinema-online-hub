@@ -1,10 +1,10 @@
 import {
   Injectable,
-  Inject,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -18,7 +18,7 @@ import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject('USER_REPOSITORY')
+    @InjectRepository(User) // ← Cách 1: NestJS tự cung cấp Repository<User>
     private userRepository: Repository<User>,
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -40,10 +40,10 @@ export class AuthService {
       throw new ConflictException('Tên đăng nhập đã được sử dụng');
     }
 
-    // Mã hóa mật khẩu
+    // Mã hóa mật khẩu (salt rounds = 12)
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Tạo user mới
+    // Tạo user mới và lưu vào DB
     const user = this.userRepository.create({
       username,
       email,
@@ -69,13 +69,13 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
-    // So sánh mật khẩu
+    // So sánh mật khẩu nhập vào với hash trong DB
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    // Cập nhật lần đăng nhập gần nhất
+    // Cập nhật thời gian đăng nhập gần nhất
     await this.usersService.updateLastLogin(user.id);
 
     // Tạo JWT token
@@ -98,24 +98,26 @@ export class AuthService {
   async changePassword(userId: number, dto: ChangePasswordDto) {
     const { oldPassword, newPassword } = dto;
 
+    // Lấy user hiện tại từ DB
     const user = await this.usersService.findById(userId);
 
-    // Kiểm tra mật khẩu cũ
+    // Kiểm tra mật khẩu cũ có đúng không
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) {
       throw new BadRequestException('Mật khẩu hiện tại không đúng');
     }
 
-    // Mã hóa và lưu mật khẩu mới
+    // Mã hóa mật khẩu mới và lưu vào DB
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     await this.userRepository.save(user);
 
     return { message: 'Đổi mật khẩu thành công' };
   }
 
+  // ── TẠO JWT TOKEN ────────────────────────────────────
   private generateToken(user: User): string {
     const payload: JwtPayload = {
-      sub: user.id,
+      sub: user.id, // sub = user id (chuẩn JWT)
       email: user.email,
       role: user.role,
     };
