@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, DeepPartial } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Movie } from './movies.entity';
-import { InjectRepository } from '@nestjs/typeorm'; // Sử dụng InjectRepository để inject repository của Movie
-// import { CreateMovieDto } from './dto/create-movie.dto';
-// import { UpdateMovieDto } from './dto/update-movie.dto';
+import { CreateMovieDto } from './dto/create-movie.dto';
+import { UpdateMovieDto } from './dto/update-movie.dto';
+import { slugify } from '../../common/utils/slugify.util';
 
 @Injectable()
 export class MoviesService {
@@ -12,18 +13,23 @@ export class MoviesService {
     private readonly movieRepository: Repository<Movie>,
   ) {}
 
-  async create(createMovieDto: DeepPartial<Movie>): Promise<Movie> {
-    const newMovie = this.movieRepository.create(createMovieDto);
-    return await this.movieRepository.save(newMovie);
+  // Tạo phim mới (admin) — slug tự sinh từ title
+  async create(dto: CreateMovieDto): Promise<Movie> {
+    const slug = slugify(dto.title);
+    const movie = this.movieRepository.create({ ...dto, slug });
+    return this.movieRepository.save(movie);
   }
 
+  // Danh sách phim đang hiển thị (public)
   async findAll(): Promise<Movie[]> {
-    return await this.movieRepository.find({
-      order: { created_at: 'DESC' },
+    return this.movieRepository.find({
+      where: { isVisible: true },
+      order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string): Promise<Movie> {
+  // Chi tiết phim theo id
+  async findOne(id: number): Promise<Movie> {
     const movie = await this.movieRepository.findOne({ where: { id } });
     if (!movie) {
       throw new NotFoundException(`Không tìm thấy phim với ID: ${id}`);
@@ -31,15 +37,34 @@ export class MoviesService {
     return movie;
   }
 
-  async update(id: string, updateMovieDto: any): Promise<Movie> {
-    const movie = await this.findOne(id); // Kiểm tra xem có tồn tại không
-    Object.assign(movie, updateMovieDto);
-    return await this.movieRepository.save(movie);
+  // Chi tiết phim theo slug (public) — tăng lượt xem
+  async findBySlug(slug: string): Promise<Movie> {
+    const movie = await this.movieRepository.findOne({ where: { slug } });
+    if (!movie) {
+      throw new NotFoundException(`Không tìm thấy phim: ${slug}`);
+    }
+    // Tăng view_count mỗi lần xem
+    await this.movieRepository.increment({ id: movie.id }, 'viewCount', 1);
+    return movie;
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  // Cập nhật phim (admin)
+  async update(id: number, dto: UpdateMovieDto): Promise<Movie> {
+    const movie = await this.findOne(id);
+
+    // Nếu đổi tiêu đề thì tạo lại slug
+    if (dto.title) {
+      movie.slug = slugify(dto.title);
+    }
+
+    Object.assign(movie, dto);
+    return this.movieRepository.save(movie);
+  }
+
+  // Xóa phim (admin)
+  async remove(id: number): Promise<{ message: string }> {
     const movie = await this.findOne(id);
     await this.movieRepository.remove(movie);
-    return { message: `Đã xóa thành công phim:` };
+    return { message: `Đã xóa phim "${movie.title}" thành công` };
   }
 }

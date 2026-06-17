@@ -1,15 +1,14 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, MaxLength } from 'class-validator';
-
-export enum MovieType {
-  SINGLE = 'SINGLE',
-  SERIES = 'SERIES',
-}
-
-export enum MovieStatus {
-  ONGOING = 'ONGOING',
-  COMPLETED = 'COMPLETED',
-  TRAILER = 'TRAILER',
-}
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  IsEnum,
+  IsBoolean,
+  MaxLength,
+} from 'class-validator';
+import { MovieType } from '../../../common/enums/movie-type.enum';
+import { MovieStatus } from '../../../common/enums/movie-status.enum';
 
 export class CreateMovieDto {
   @IsString()
@@ -18,39 +17,32 @@ export class CreateMovieDto {
   title: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  slug: string;
-
-  @IsString()
   @IsOptional()
   description?: string;
 
   @IsString()
   @IsOptional()
-  poster_url?: string;
+  @MaxLength(500)
+  posterUrl?: string;
 
   @IsString()
   @IsOptional()
-  backdrop_url?: string;
-
-  @IsString()
-  @IsOptional()
-  trailer_url?: string;
+  @MaxLength(500)
+  bannerUrl?: string;
 
   @IsEnum(MovieType)
   @IsNotEmpty()
   type: MovieType;
 
   @IsEnum(MovieStatus)
-  @IsNotEmpty()
-  status: MovieStatus;
+  @IsOptional()
+  status?: MovieStatus;
 
   @IsInt()
   @IsOptional()
-  release_year?: number;
+  releaseYear?: number;
 
-  @IsInt()
+  @IsBoolean()
   @IsOptional()
-  country_id?: number;
+  isFeatured?: boolean;
 }

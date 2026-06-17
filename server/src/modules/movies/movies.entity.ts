@@ -1,40 +1,66 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { MovieType } from '../../common/enums/movie-type.enum';
+import { MovieStatus } from '../../common/enums/movie-status.enum';
 
 @Entity('movies')
 export class Movie {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  title: string | undefined;
+  @Column({ length: 255 })
+  title: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ length: 280, unique: true })
   slug: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  poster_url: string;
+  @Column({ name: 'poster_url', length: 500, nullable: true })
+  posterUrl: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  backdrop_url: string;
+  @Column({ name: 'banner_url', length: 500, nullable: true })
+  bannerUrl: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  trailer_url: string;
+  @Column({ type: 'enum', enum: MovieType })
+  type: MovieType;
 
-  @Column({ type: 'varchar', length: 20 })
-  type: string; // 'SINGLE' | 'SERIES'
+  @Column({ type: 'enum', enum: MovieStatus, default: MovieStatus.ONGOING })
+  status: MovieStatus;
 
-  @Column({ type: 'varchar', length: 20 })
-  status: string; // 'ONGOING' | 'COMPLETED' | 'TRAILER'
+  @Column({ name: 'release_year', type: 'int', nullable: true })
+  releaseYear: number;
 
-  @Column({ type: 'int', nullable: true })
-  release_year: number;
+  @Column({ name: 'total_episodes', type: 'int', default: 0 })
+  totalEpisodes: number;
 
-  @Column({ type: 'int', nullable: true })
-  country_id: number;
+  @Column({ name: 'view_count', type: 'int', default: 0 })
+  viewCount: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at: Date;
+  @Column({ name: 'avg_rating', type: 'float', default: 0 })
+  avgRating: number;
+
+  @Column({ name: 'rating_count', type: 'int', default: 0 })
+  ratingCount: number;
+
+  @Column({ name: 'is_featured', default: false })
+  isFeatured: boolean;
+
+  @Column({ name: 'is_visible', default: true })
+  isVisible: boolean;
+
+  @Column({ name: 'schedule_date', type: 'datetime', nullable: true })
+  scheduleDate: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }
