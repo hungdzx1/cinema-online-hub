@@ -1,15 +1,36 @@
 import { Module } from '@nestjs/common';
-import { databaseProviders } from './Database.providers';
-import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
 
 @Module({
-  // Import ConfigModule vì trong provider của bạn đang xài ConfigService
-  imports: [ConfigModule], 
-  
-  // Đăng ký provider
-  providers: [...databaseProviders], 
-  
-  // Export ra để các module khác (như UserModule, MovieModule...) có thể dùng 'DATA_SOURCE'
-  exports: [...databaseProviders], 
+  imports: [
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        // Đọc CA certificate của Aiven 1 lần
+        const ca = fs.readFileSync('ca.pem').toString();
+
+        return {
+          type: 'mysql',
+          host: config.get<string>('DB_HOST'),
+          port: Number(config.get('DB_PORT')) || 3306,
+          username: config.get<string>('DB_USERNAME'),
+          password: config.get<string>('DB_PASSWORD'),
+          database: config.get<string>('DB_NAME'),
+
+          // SSL cho Aiven - đặt ở extra để truyền THẲNG xuống mysql2
+          ssl: { ca },
+          extra: {
+            ssl: { ca },
+          },
+
+          autoLoadEntities: true,
+          synchronize: false,
+        };
+      },
+    }),
+  ],
 })
 export class DatabaseModule {}
