@@ -29,7 +29,6 @@ import { AdminModule } from './modules/admin/admin.module';
     }),
 
     DatabaseModule,
-
     AuthModule,
     UsersModule,
     GenresModule,

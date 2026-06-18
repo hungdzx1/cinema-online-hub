@@ -10,7 +10,7 @@ import * as fs from 'fs';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         // Đọc CA certificate của Aiven 1 lần
-        const ca = fs.readFileSync('ca.pem').toString();
+        // const ca = fs.readFileSync('ca.pem').toString();
 
         return {
           type: 'mysql',
@@ -21,10 +21,10 @@ import * as fs from 'fs';
           database: config.get<string>('DB_NAME'),
 
           // SSL cho Aiven - đặt ở extra để truyền THẲNG xuống mysql2
-          ssl: { ca },
-          extra: {
-            ssl: { ca },
-          },
+          // ssl: { ca },
+          // // extra: {
+          //   // ssl: { ca },
+          // },
 
           autoLoadEntities: true,
           synchronize: false,
