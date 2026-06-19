@@ -5,14 +5,18 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
-// Đặt tên NotificationEntity để tránh trùng type "Notification" có sẵn của trình duyệt
+// Đặt tên NotificationEntity tránh trùng type "Notification" của trình duyệt
 @Entity('notifications')
 export class NotificationEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ name: 'user_id' })
-  userId: number; // Thông báo gửi cho ai
+  userId: number;
+
+  // Schema dùng ENUM('new_episode', 'system')
+  @Column({ type: 'enum', enum: ['new_episode', 'system'], default: 'system' })
+  type: string;
 
   @Column({ length: 255 })
   title: string;
@@ -20,14 +24,12 @@ export class NotificationEntity {
   @Column({ type: 'text', nullable: true })
   content: string;
 
-  @Column({ length: 50, nullable: true })
-  type: string; // new_episode | report_reply | system...
-
-  @Column({ length: 500, nullable: true })
-  link: string; // Click thông báo → đi đến đâu
+  // Schema dùng tên cột link_url (KHÔNG phải link)
+  @Column({ name: 'link_url', length: 500, nullable: true })
+  linkUrl: string;
 
   @Column({ name: 'is_read', default: false })
-  isRead: boolean; // Đã đọc chưa
+  isRead: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

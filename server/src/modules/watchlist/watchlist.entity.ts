@@ -1,12 +1,8 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
 @Entity('watchlist')
 export class Watchlist {
+  // Khóa chính kép (user_id + movie_id) - khớp schema, KHÔNG có cột id
   @PrimaryColumn({ name: 'user_id' })
   userId: number;
 

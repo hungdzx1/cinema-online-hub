@@ -3,13 +3,14 @@ import {
   IsNotEmpty,
   IsString,
   IsOptional,
+  IsIn,
   MaxLength,
 } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsInt()
   @IsNotEmpty()
-  userId: number; // Gửi cho user nào
+  userId: number;
 
   @IsString()
   @IsNotEmpty()
@@ -20,13 +21,12 @@ export class CreateNotificationDto {
   @IsOptional()
   content?: string;
 
-  @IsString()
+  @IsIn(['new_episode', 'system'])
   @IsOptional()
-  @MaxLength(50)
   type?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(500)
-  link?: string;
+  linkUrl?: string;
 }

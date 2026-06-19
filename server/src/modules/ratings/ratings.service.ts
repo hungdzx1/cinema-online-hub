@@ -11,36 +11,42 @@ export class RatingsService {
     private ratingRepository: Repository<Rating>,
   ) {}
 
-  // Đánh giá phim — mỗi user chỉ 1 điểm/phim (có thì cập nhật, chưa thì tạo)
+  // Đánh giá phim - đã đánh giá thì cập nhật (upsert theo user+movie)
   async rate(userId: number, dto: CreateRatingDto): Promise<Rating> {
     const existed = await this.ratingRepository.findOne({
       where: { userId, movieId: dto.movieId },
     });
 
     if (existed) {
-      // Đã đánh giá rồi → cập nhật điểm mới
       existed.score = dto.score;
+      if (dto.content !== undefined) existed.content = dto.content;
       return this.ratingRepository.save(existed);
     }
 
-    // Chưa đánh giá → tạo mới
     const rating = new Rating();
     rating.userId = userId;
     rating.movieId = dto.movieId;
     rating.score = dto.score;
+    if (dto.content) rating.content = dto.content;
     return this.ratingRepository.save(rating);
   }
 
-  // Lấy điểm user đã đánh giá cho 1 phim
-  async getUserRating(userId: number, movieId: number): Promise<Rating> {
-    const rating = await this.ratingRepository.findOne({
+  // Danh sách đánh giá của 1 phim
+  async findByMovie(movieId: number): Promise<Rating[]> {
+    return this.ratingRepository.find({
+      where: { movieId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // ==================== THÊM HÀM NÀY VÀO ĐÂY ====================
+  // Xem điểm mình đã đánh giá cho 1 bộ phim cụ thể
+  async getUserRating(userId: number, movieId: number): Promise<Rating | null> {
+    return this.ratingRepository.findOne({
       where: { userId, movieId },
     });
-    if (!rating) {
-      throw new NotFoundException('Bạn chưa đánh giá phim này');
-    }
-    return rating;
   }
+  // ==============================================================
 
   // Xóa đánh giá của mình
   async remove(userId: number, movieId: number): Promise<{ message: string }> {

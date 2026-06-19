@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { ErrorType } from '../../common/enums/error-type.enum';
 import { ReportStatus } from '../../common/enums/report-status.enum';
@@ -20,20 +19,23 @@ export class ErrorReport {
   movieId: number;
 
   @Column({ name: 'episode_id', nullable: true })
-  episodeId: number; // Tập bị lỗi (null nếu lỗi chung của phim)
+  episodeId: number;
 
   @Column({ name: 'error_type', type: 'enum', enum: ErrorType })
-  errorType: ErrorType; // video_not_load | wrong_episode | ...
+  errorType: ErrorType;
 
   @Column({ type: 'text', nullable: true })
-  description: string; // Mô tả thêm
+  description: string;
 
   @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.PENDING })
-  status: ReportStatus; // pending | resolved | ignored
+  status: ReportStatus;
+
+  // Schema có admin_note (ghi chú của admin khi xử lý)
+  @Column({ name: 'admin_note', type: 'text', nullable: true })
+  adminNote: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  // Schema KHÔNG có updated_at → bỏ @UpdateDateColumn
 }

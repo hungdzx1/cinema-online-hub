@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity('watch_history')
-@Unique(['userId', 'episodeId']) // Mỗi tập 1 bản ghi tiến độ / user
+@Unique(['userId', 'episodeId'])
 export class WatchHistory {
   @PrimaryGeneratedColumn()
   id: number;
@@ -22,8 +22,9 @@ export class WatchHistory {
   episodeId: number;
 
   @Column({ name: 'progress_seconds', type: 'int', default: 0 })
-  progressSeconds: number; // Xem đến giây thứ mấy
+  progressSeconds: number;
 
-  @UpdateDateColumn({ name: 'last_watched_at' })
-  lastWatchedAt: Date; // Tự cập nhật mỗi lần lưu
+  // Schema dùng tên cột watched_at (KHÔNG phải last_watched_at)
+  @UpdateDateColumn({ name: 'watched_at' })
+  watchedAt: Date;
 }

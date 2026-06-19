@@ -11,7 +11,6 @@ export class WatchHistoryService {
     private historyRepository: Repository<WatchHistory>,
   ) {}
 
-  // Lưu tiến độ xem — đã xem tập này thì cập nhật, chưa thì tạo mới
   async saveProgress(
     userId: number,
     dto: SaveProgressDto,
@@ -21,12 +20,10 @@ export class WatchHistoryService {
     });
 
     if (existed) {
-      // Đã xem tập này → cập nhật tiến độ mới
       existed.progressSeconds = dto.progressSeconds ?? 0;
       return this.historyRepository.save(existed);
     }
 
-    // Chưa xem → tạo bản ghi mới
     const history = new WatchHistory();
     history.userId = userId;
     history.movieId = dto.movieId;
@@ -35,15 +32,14 @@ export class WatchHistoryService {
     return this.historyRepository.save(history);
   }
 
-  // Lịch sử xem của user (mới nhất trước) — phim "Xem tiếp"
+  // Lịch sử xem (mới nhất trước) - dùng watchedAt
   async findByUser(userId: number): Promise<WatchHistory[]> {
     return this.historyRepository.find({
       where: { userId },
-      order: { lastWatchedAt: 'DESC' },
+      order: { watchedAt: 'DESC' },
     });
   }
 
-  // Xóa 1 bản ghi lịch sử
   async remove(userId: number, id: number): Promise<{ message: string }> {
     const history = await this.historyRepository.findOne({
       where: { id, userId },
@@ -55,7 +51,6 @@ export class WatchHistoryService {
     return { message: 'Đã xóa khỏi lịch sử' };
   }
 
-  // Xóa toàn bộ lịch sử xem của user
   async clearAll(userId: number): Promise<{ message: string }> {
     await this.historyRepository.delete({ userId });
     return { message: 'Đã xóa toàn bộ lịch sử xem' };

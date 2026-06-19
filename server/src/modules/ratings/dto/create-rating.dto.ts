@@ -1,4 +1,11 @@
-import { IsInt, IsNotEmpty, Min, Max } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  Min,
+  Max,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateRatingDto {
   @IsInt()
@@ -8,5 +15,9 @@ export class CreateRatingDto {
   @IsInt()
   @Min(1)
   @Max(10)
-  score: number; // Điểm từ 1 đến 10
+  score: number;
+
+  @IsString()
+  @IsOptional()
+  content?: string;
 }

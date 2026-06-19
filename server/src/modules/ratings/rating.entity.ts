@@ -1,26 +1,25 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Unique,
 } from 'typeorm';
 
 @Entity('ratings')
-@Unique(['userId', 'movieId']) // ← Mỗi user chỉ 1 điểm/phim (khớp schema SQL)
 export class Rating {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ name: 'user_id' })
+  // Khóa chính kép - khớp schema, KHÔNG có cột id
+  @PrimaryColumn({ name: 'user_id' })
   userId: number;
 
-  @Column({ name: 'movie_id' })
+  @PrimaryColumn({ name: 'movie_id' })
   movieId: number;
 
-  @Column({ type: 'int' })
-  score: number; // Điểm 1-10
+  @Column({ type: 'tinyint' })
+  score: number; // 1-10
+
+  @Column({ type: 'text', nullable: true })
+  content: string; // Nội dung đánh giá (schema có cột này)
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
