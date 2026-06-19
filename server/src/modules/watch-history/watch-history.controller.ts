@@ -10,7 +10,10 @@ import {
 import { WatchHistoryService } from './watch-history.service';
 import { SaveProgressDto } from './dto/save-progress.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 
 @Controller('watch-history')
 @UseGuards(JwtAuthGuard)
