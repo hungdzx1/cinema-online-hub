@@ -20,25 +20,21 @@ import { UserRole } from '../../common/enums/user-role.enum';
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
 
-  // GET /countries — Danh sách (public)
   @Get()
   findAll() {
     return this.countriesService.findAll();
   }
 
-  // GET /countries/slug/:slug — Chi tiết theo slug (public)
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {
     return this.countriesService.findBySlug(slug);
   }
 
-  // GET /countries/:id — Chi tiết theo id (public)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.countriesService.findById(+id);
   }
 
-  // POST /countries — Tạo (admin)
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -46,7 +42,6 @@ export class CountriesController {
     return this.countriesService.create(dto);
   }
 
-  // PATCH /countries/:id — Sửa (admin)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -54,7 +49,6 @@ export class CountriesController {
     return this.countriesService.update(+id, dto);
   }
 
-  // DELETE /countries/:id — Xóa (admin)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

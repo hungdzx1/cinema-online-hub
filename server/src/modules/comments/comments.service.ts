@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import sanitizeHtml from 'sanitize-html';
 import { CommentEntity } from './comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
@@ -20,7 +21,15 @@ export class CommentsService {
     const comment = new CommentEntity();
     comment.userId = userId;
     comment.movieId = dto.movieId;
-    comment.content = dto.content;
+
+    // CHỐNG XSS: làm sạch nội dung trước khi lưu
+    // allowedTags: [] + allowedAttributes: {} → XÓA HẾT mọi thẻ HTML
+    // "<script>alert('hack')</script>Phim hay" → "Phim hay"
+    comment.content = sanitizeHtml(dto.content, {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+
     if (dto.parentId) {
       comment.parentId = dto.parentId;
     }

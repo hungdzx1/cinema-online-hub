@@ -20,7 +20,6 @@ import { UserRole } from '../../common/enums/user-role.enum';
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
-  // POST /movies — Tạo phim (admin)
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -28,25 +27,21 @@ export class MoviesController {
     return this.moviesService.create(createMovieDto);
   }
 
-  // GET /movies — Danh sách phim (public)
   @Get()
   findAll() {
     return this.moviesService.findAll();
   }
 
-  // GET /movies/slug/:slug — Chi tiết theo slug (public)
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {
     return this.moviesService.findBySlug(slug);
   }
 
-  // GET /movies/:id — Chi tiết theo id
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.moviesService.findOne(+id);
   }
 
-  // PATCH /movies/:id — Cập nhật (admin)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -54,7 +49,6 @@ export class MoviesController {
     return this.moviesService.update(+id, updateMovieDto);
   }
 
-  // DELETE /movies/:id — Xóa (admin)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

@@ -6,24 +6,21 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard) // TẤT CẢ route admin cần login + quyền admin
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // GET /admin/stats — Thống kê tổng quan
   @Get('stats')
   getStats() {
     return this.adminService.getDashboardStats();
   }
 
-  // GET /admin/top-movies — Top 10 phim xem nhiều
   @Get('top-movies')
   getTopMovies() {
     return this.adminService.getTopMovies();
   }
 
-  // GET /admin/recent-users — User mới đăng ký
   @Get('recent-users')
   getRecentUsers() {
     return this.adminService.getRecentUsers();

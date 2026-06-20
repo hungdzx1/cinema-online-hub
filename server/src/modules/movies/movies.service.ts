@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Movie } from './movies.entity';
@@ -8,6 +8,8 @@ import { slugify } from '../../common/utils/slugify.util';
 
 @Injectable()
 export class MoviesService {
+  private readonly logger = new Logger(MoviesService.name);
+
   constructor(
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
@@ -17,7 +19,9 @@ export class MoviesService {
   async create(dto: CreateMovieDto): Promise<Movie> {
     const slug = slugify(dto.title);
     const movie = this.movieRepository.create({ ...dto, slug });
-    return this.movieRepository.save(movie);
+    const saved = await this.movieRepository.save(movie);
+    this.logger.log(`Tạo phim mới: "${saved.title}" (id=${saved.id})`);
+    return saved;
   }
 
   // Danh sách phim đang hiển thị (public)
@@ -32,6 +36,7 @@ export class MoviesService {
   async findOne(id: number): Promise<Movie> {
     const movie = await this.movieRepository.findOne({ where: { id } });
     if (!movie) {
+      this.logger.warn(`Không tìm thấy phim id=${id}`);
       throw new NotFoundException(`Không tìm thấy phim với ID: ${id}`);
     }
     return movie;
@@ -41,9 +46,9 @@ export class MoviesService {
   async findBySlug(slug: string): Promise<Movie> {
     const movie = await this.movieRepository.findOne({ where: { slug } });
     if (!movie) {
+      this.logger.warn(`Không tìm thấy phim slug=${slug}`);
       throw new NotFoundException(`Không tìm thấy phim: ${slug}`);
     }
-    // Tăng view_count mỗi lần xem
     await this.movieRepository.increment({ id: movie.id }, 'viewCount', 1);
     return movie;
   }
@@ -52,19 +57,21 @@ export class MoviesService {
   async update(id: number, dto: UpdateMovieDto): Promise<Movie> {
     const movie = await this.findOne(id);
 
-    // Nếu đổi tiêu đề thì tạo lại slug
     if (dto.title) {
       movie.slug = slugify(dto.title);
     }
 
     Object.assign(movie, dto);
-    return this.movieRepository.save(movie);
+    const updated = await this.movieRepository.save(movie);
+    this.logger.log(`Cập nhật phim: "${updated.title}" (id=${id})`);
+    return updated;
   }
 
   // Xóa phim (admin)
   async remove(id: number): Promise<{ message: string }> {
     const movie = await this.findOne(id);
     await this.movieRepository.remove(movie);
+    this.logger.log(`Xóa phim: "${movie.title}" (id=${id})`);
     return { message: `Đã xóa phim "${movie.title}" thành công` };
   }
 }

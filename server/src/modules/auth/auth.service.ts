@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
@@ -17,8 +18,11 @@ import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
+  // Logger riêng cho AuthService - log sẽ hiện [AuthService]
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
-    @InjectRepository(User) // ← Cách 1: NestJS tự cung cấp Repository<User>
+    @InjectRepository(User)
     private userRepository: Repository<User>,
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -27,60 +31,54 @@ export class AuthService {
   // ── ĐĂNG KÝ ──────────────────────────────────────────
   async register(registerDto: RegisterDto) {
     const { username, email, password } = registerDto;
+    this.logger.log(`Yêu cầu đăng ký: ${email}`);
 
-    // Kiểm tra email đã tồn tại chưa
     const existedEmail = await this.usersService.findByEmail(email);
     if (existedEmail) {
+      this.logger.warn(`Đăng ký thất bại - email đã tồn tại: ${email}`);
       throw new ConflictException('Email đã được sử dụng');
     }
 
-    // Kiểm tra username đã tồn tại chưa
     const existedUsername = await this.usersService.findByUsername(username);
     if (existedUsername) {
+      this.logger.warn(`Đăng ký thất bại - username đã tồn tại: ${username}`);
       throw new ConflictException('Tên đăng nhập đã được sử dụng');
     }
 
-    // Mã hóa mật khẩu (salt rounds = 12)
     const passwordHash = await bcrypt.hash(password, 12);
-
-    // Tạo user mới và lưu vào DB
-    const user = this.userRepository.create({
-      username,
-      email,
-      passwordHash,
-    });
+    const user = this.userRepository.create({ username, email, passwordHash });
     await this.userRepository.save(user);
 
+    this.logger.log(`Đăng ký thành công: ${email} (id=${user.id})`);
     return { message: 'Đăng ký thành công', userId: user.id };
   }
 
   // ── ĐĂNG NHẬP ────────────────────────────────────────
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
+    this.logger.log(`Yêu cầu đăng nhập: ${email}`);
 
-    // Tìm user theo email
     const user = await this.usersService.findByEmail(email);
     if (!user) {
+      this.logger.warn(`Đăng nhập thất bại - không tìm thấy: ${email}`);
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    // Kiểm tra tài khoản bị khóa
     if (user.isBanned) {
+      this.logger.warn(`Đăng nhập bị chặn - tài khoản khóa: ${email}`);
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
-    // So sánh mật khẩu nhập vào với hash trong DB
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      this.logger.warn(`Đăng nhập thất bại - sai mật khẩu: ${email}`);
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    // Cập nhật thời gian đăng nhập gần nhất
     await this.usersService.updateLastLogin(user.id);
-
-    // Tạo JWT token
     const token = this.generateToken(user);
 
+    this.logger.log(`Đăng nhập thành công: ${email} (role=${user.role})`);
     return {
       message: 'Đăng nhập thành công',
       accessToken: token,
@@ -97,27 +95,26 @@ export class AuthService {
   // ── ĐỔI MẬT KHẨU ─────────────────────────────────────
   async changePassword(userId: number, dto: ChangePasswordDto) {
     const { oldPassword, newPassword } = dto;
+    this.logger.log(`Yêu cầu đổi mật khẩu: user id=${userId}`);
 
-    // Lấy user hiện tại từ DB
     const user = await this.usersService.findById(userId);
-
-    // Kiểm tra mật khẩu cũ có đúng không
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) {
+      this.logger.warn(`Đổi mật khẩu thất bại - sai mật khẩu cũ: id=${userId}`);
       throw new BadRequestException('Mật khẩu hiện tại không đúng');
     }
 
-    // Mã hóa mật khẩu mới và lưu vào DB
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     await this.userRepository.save(user);
 
+    this.logger.log(`Đổi mật khẩu thành công: id=${userId}`);
     return { message: 'Đổi mật khẩu thành công' };
   }
 
   // ── TẠO JWT TOKEN ────────────────────────────────────
   private generateToken(user: User): string {
     const payload: JwtPayload = {
-      sub: user.id, // sub = user id (chuẩn JWT)
+      sub: user.id,
       email: user.email,
       role: user.role,
     };

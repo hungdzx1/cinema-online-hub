@@ -20,13 +20,11 @@ import { UserRole } from '../../common/enums/user-role.enum';
 export class GenresController {
   constructor(private readonly genresService: GenresService) {}
 
-  // GET /genres — Danh sách thể loại (public, ai cũng xem được)
   @Get()
   findAll() {
     return this.genresService.findAll();
   }
 
-  // GET /genres/all — Tất cả thể loại kể cả ẩn (admin)
   @Get('all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -34,13 +32,11 @@ export class GenresController {
     return this.genresService.findAllForAdmin();
   }
 
-  // GET /genres/:slug — Chi tiết thể loại theo slug (public)
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.genresService.findBySlug(slug);
   }
 
-  // POST /genres — Tạo thể loại (admin)
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -48,7 +44,6 @@ export class GenresController {
     return this.genresService.create(dto);
   }
 
-  // PATCH /genres/:id — Cập nhật (admin)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -56,7 +51,6 @@ export class GenresController {
     return this.genresService.update(+id, dto);
   }
 
-  // DELETE /genres/:id — Xóa (admin)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

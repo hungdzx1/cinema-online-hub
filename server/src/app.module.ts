@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import * as path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -28,6 +31,21 @@ import { AdminModule } from './modules/admin/admin.module';
       envFilePath: path.join(__dirname, '..', '.env'),
     }),
 
+    // Cache toàn cục - lưu RAM, TTL 60 giây
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60000,
+    }),
+
+    // Rate Limiting - chống spam/brute-force
+    // Trong 60 giây, 1 IP chỉ được gọi tối đa 20 request
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 20,
+      },
+    ]),
+
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -45,6 +63,13 @@ import { AdminModule } from './modules/admin/admin.module';
     AdminModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Áp dụng Rate Limiting cho TOÀN BỘ API tự động
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

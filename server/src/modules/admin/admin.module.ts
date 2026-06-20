@@ -8,7 +8,6 @@ import { CommentEntity } from '../comments/comment.entity';
 import { ErrorReport } from '../error-reports/error-report.entity';
 
 @Module({
-  // Khai báo các entity cần đếm/thống kê
   imports: [
     TypeOrmModule.forFeature([User, Movie, CommentEntity, ErrorReport]),
   ],

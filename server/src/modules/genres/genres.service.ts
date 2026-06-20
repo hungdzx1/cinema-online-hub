@@ -1,9 +1,12 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import * as cacheManager_1 from 'cache-manager';
 import { Repository } from 'typeorm';
 import { Genre } from './genre.entity';
 import { CreateGenreDto } from './dto/create-genre.dto';
@@ -12,16 +15,34 @@ import { slugify } from '../../common/utils/slugify.util';
 
 @Injectable()
 export class GenresService {
+  // Key cache cho danh sách thể loại
+  private readonly CACHE_KEY = 'genres_all';
+
   constructor(
     @InjectRepository(Genre)
     private genreRepository: Repository<Genre>,
+    // CACHE_MANAGER lấy từ CacheModule global (app.module)
+    @Inject(CACHE_MANAGER)
+    private cacheManager: cacheManager_1.Cache,
   ) {}
 
+  // Danh sách thể loại (public) — CÓ CACHE THỦ CÔNG
   async findAll(): Promise<Genre[]> {
-    return this.genreRepository.find({
+    // 1. Thử lấy từ cache trước
+    const cached = await this.cacheManager.get<Genre[]>(this.CACHE_KEY);
+    if (cached) {
+      return cached; // Có cache → trả luôn, KHÔNG query DB
+    }
+
+    // 2. Không có cache → query DB
+    const genres = await this.genreRepository.find({
       where: { isVisible: true },
       order: { name: 'ASC' },
     });
+
+    // 3. Lưu vào cache 120 giây
+    await this.cacheManager.set(this.CACHE_KEY, genres, 120000);
+    return genres;
   }
 
   async findAllForAdmin(): Promise<Genre[]> {
@@ -51,7 +72,11 @@ export class GenresService {
       slug,
       isVisible: dto.isVisible ?? true,
     });
-    return this.genreRepository.save(genre);
+    const saved = await this.genreRepository.save(genre);
+
+    // Xóa cache để lần sau lấy dữ liệu MỚI (có thể loại vừa tạo)
+    await this.cacheManager.del(this.CACHE_KEY);
+    return saved;
   }
 
   async update(id: number, dto: UpdateGenreDto): Promise<Genre> {
@@ -65,11 +90,18 @@ export class GenresService {
       genre.isVisible = dto.isVisible;
     }
 
-    return this.genreRepository.save(genre);
+    const updated = await this.genreRepository.save(genre);
+
+    // Xóa cache để lần sau lấy dữ liệu mới
+    await this.cacheManager.del(this.CACHE_KEY);
+    return updated;
   }
 
   async remove(id: number): Promise<void> {
     const genre = await this.findById(id);
     await this.genreRepository.remove(genre);
+
+    // Xóa cache để lần sau lấy dữ liệu mới
+    await this.cacheManager.del(this.CACHE_KEY);
   }
 }

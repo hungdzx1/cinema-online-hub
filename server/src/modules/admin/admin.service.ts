@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/user.entity';
@@ -9,6 +9,8 @@ import { ReportStatus } from '../../common/enums/report-status.enum';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -22,7 +24,8 @@ export class AdminService {
 
   // Thống kê tổng quan cho dashboard
   async getDashboardStats() {
-    // Chạy song song nhiều câu đếm cho nhanh
+    this.logger.log('Truy cập dashboard thống kê');
+
     const [totalUsers, totalMovies, totalComments, pendingReports] =
       await Promise.all([
         this.userRepository.count(),
@@ -37,12 +40,13 @@ export class AdminService {
       totalUsers,
       totalMovies,
       totalComments,
-      pendingReports, // Số báo lỗi đang chờ xử lý
+      pendingReports,
     };
   }
 
   // Top phim xem nhiều nhất
   async getTopMovies() {
+    this.logger.log('Lấy top phim xem nhiều');
     return this.movieRepository.find({
       order: { viewCount: 'DESC' },
       take: 10,
@@ -58,6 +62,7 @@ export class AdminService {
 
   // User mới đăng ký gần đây
   async getRecentUsers() {
+    this.logger.log('Lấy danh sách user mới');
     return this.userRepository.find({
       order: { createdAt: 'DESC' },
       take: 10,

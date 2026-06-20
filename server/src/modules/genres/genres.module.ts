@@ -5,7 +5,7 @@ import { GenresService } from './genres.service';
 import { Genre } from './genre.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Genre])], // ← Cách 1
+  imports: [TypeOrmModule.forFeature([Genre])],
   controllers: [GenresController],
   providers: [GenresService],
   exports: [GenresService],
