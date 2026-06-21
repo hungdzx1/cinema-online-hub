@@ -13,6 +13,7 @@ import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { RandomMovieFilterDto } from './dto/random-movie-filter.dto';
+import { FilterMovieDto } from './dto/filter-movie.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -35,9 +36,8 @@ export class MoviesController {
     return this.moviesService.findBySlug(slug);
   }
 
-  // ⚠️ QUAN TRỌNG: 2 route random PHẢI đặt TRƯỚC @Get(':id')
-  // Nếu đặt sau, NestJS sẽ hiểu "random" là 1 giá trị :id
-  // và gọi nhầm findOne("random") → lỗi
+  // ⚠️ Tất cả route TĨNH (random, filter) PHẢI đặt TRƯỚC @Get(':id')
+  // nếu không NestJS sẽ hiểu "random"/"filter" là 1 giá trị :id → gọi nhầm findOne
   @Get('random')
   getRandomOne() {
     return this.moviesService.getRandomOne();
@@ -46,6 +46,11 @@ export class MoviesController {
   @Get('random/advanced')
   getRandomAdvanced(@Query() filters: RandomMovieFilterDto) {
     return this.moviesService.getRandomAdvanced(filters);
+  }
+
+  @Get('filter')
+  filterMovies(@Query() filters: FilterMovieDto) {
+    return this.moviesService.filterMovies(filters);
   }
 
   @Get(':id')
