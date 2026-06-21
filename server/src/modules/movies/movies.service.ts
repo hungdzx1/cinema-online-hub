@@ -5,6 +5,7 @@ import { Movie } from './movies.entity';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { RandomMovieFilterDto } from './dto/random-movie-filter.dto';
+import { FilterMovieDto } from './dto/filter-movie.dto';
 import { slugify } from '../../common/utils/slugify.util';
 @Injectable()
 export class MoviesService {
@@ -66,7 +67,7 @@ export class MoviesService {
     return { message: `Đã xóa phim "${movie.title}" thành công` };
   }
 
-  // ===== THÊM MỚI — RANDOM NHANH: lấy đúng 1 phim ngẫu nhiên =====
+  // ===== RANDOM NHANH: lấy đúng 1 phim ngẫu nhiên =====
   async getRandomOne(): Promise<Movie> {
     const movie = await this.movieRepository
       .createQueryBuilder('movie')
@@ -82,7 +83,7 @@ export class MoviesService {
     return movie;
   }
 
-  // ===== THÊM MỚI — RANDOM NÂNG CAO: lọc theo điều kiện rồi random trong nhóm thỏa điều kiện =====
+  // ===== RANDOM NÂNG CAO: lọc theo điều kiện rồi random trong nhóm thỏa điều kiện =====
   async getRandomAdvanced(filters: RandomMovieFilterDto): Promise<Movie[]> {
     const { type, status, genreIds, limit = 10, sortBy = 'view' } = filters;
 
@@ -97,7 +98,6 @@ export class MoviesService {
       qb.andWhere('movie.status = :status', { status });
     }
 
-    // Lọc theo thể loại — kết hợp AND (phim phải có ĐỦ tất cả thể loại đã chọn)
     if (genreIds && genreIds.length > 0) {
       qb.innerJoin('movie.genres', 'genre', 'genre.id IN (:...genreIds)', {
         genreIds,
@@ -108,26 +108,19 @@ export class MoviesService {
         });
     }
 
-    // Random trong nhóm đã lọc, lấy đúng số lượng yêu cầu
     qb.orderBy('RAND()').limit(limit);
 
     const movies = await qb.getMany();
 
     if (movies.length === 0) {
-      // Chuyển mảng thành chuỗi "1,2,3" hoặc in ra chữ "none" nếu undefined
-      const genreIdsStr = genreIds ? genreIds.join(',') : 'none';
-
       this.logger.warn(
-        `Random nâng cao: không có phim thỏa điều kiện (type=${type || 'all'}, status=${status || 'all'}, genreIds=${genreIdsStr})`,
+        `Random nâng cao: không có phim thỏa điều kiện (type=${type}, status=${status}, genreIds=${genreIds})`,
       );
     }
 
-    // Sắp xếp lại danh sách ĐÃ RANDOM theo tiêu chí hiển thị người dùng chọn
     return this.sortByCriteria(movies, sortBy);
   }
 
-  // Sắp xếp danh sách phim đã random theo tiêu chí hiển thị
-  // (like/comment tạm dùng viewCount vì DB chưa có cột đếm riêng)
   private sortByCriteria(movies: Movie[], sortBy: string): Movie[] {
     const sorted = [...movies];
     switch (sortBy) {
@@ -141,5 +134,73 @@ export class MoviesService {
       default:
         return sorted.sort((a, b) => b.viewCount - a.viewCount);
     }
+  }
+
+  // ===== THÊM MỚI — BỘ LỌC: lọc nhiều điều kiện AND + sắp xếp + phân trang =====
+  async filterMovies(filters: FilterMovieDto) {
+    const {
+      countryId,
+      type,
+      genreIds,
+      releaseYear,
+      sortBy = 'newest',
+      page = 1,
+      limit = 20,
+    } = filters;
+
+    const qb = this.movieRepository
+      .createQueryBuilder('movie')
+      .where('movie.isVisible = :visible', { visible: true });
+
+    // Lọc loại phim
+    if (type) {
+      qb.andWhere('movie.type = :type', { type });
+    }
+
+    // Lọc năm sản xuất
+    if (releaseYear) {
+      qb.andWhere('movie.releaseYear = :releaseYear', { releaseYear });
+    }
+
+    // Lọc quốc gia — phim thuộc quốc gia đã chọn (JOIN bảng movie_countries)
+    if (countryId) {
+      qb.innerJoin('movie.countries', 'country', 'country.id = :countryId', {
+        countryId,
+      });
+    }
+
+    // Lọc thể loại — AND: phim phải có ĐỦ tất cả thể loại đã chọn
+    if (genreIds && genreIds.length > 0) {
+      qb.innerJoin('movie.genres', 'genre', 'genre.id IN (:...genreIds)', {
+        genreIds,
+      })
+        .groupBy('movie.id')
+        .having('COUNT(DISTINCT genre.id) = :genreCount', {
+          genreCount: genreIds.length,
+        });
+    }
+
+    // Sắp xếp kết quả
+    switch (sortBy) {
+      case 'imdb':
+        qb.orderBy('movie.avgRating', 'DESC');
+        break;
+      case 'views':
+        qb.orderBy('movie.viewCount', 'DESC');
+        break;
+      case 'newest':
+      default:
+        qb.orderBy('movie.createdAt', 'DESC');
+        break;
+    }
+
+    // Phân trang — lấy DƯ 1 phim để biết còn trang sau không (hasMore)
+    qb.limit(limit + 1).offset((page - 1) * limit);
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const data = hasMore ? rows.slice(0, limit) : rows;
+
+    return { data, page, limit, hasMore };
   }
 }
