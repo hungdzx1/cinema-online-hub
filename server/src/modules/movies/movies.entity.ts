@@ -10,6 +10,10 @@ import {
 import { MovieType } from '../../common/enums/movie-type.enum';
 import { MovieStatus } from '../../common/enums/movie-status.enum';
 import { Genre } from '../genres/genre.entity';
+import { Country } from '../countries/countries.entity';
+// ⚠️ KIỂM TRA: dòng import Country ở trên — mở file countries.entity.ts của bạn
+// xem tên class có đúng là "Country" và đường dẫn '../countries/countries.entity'
+// có khớp không (sửa cho đúng nếu khác tên file/class)
 
 @Entity('movies')
 export class Movie {
@@ -50,9 +54,7 @@ export class Movie {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // ===== THÊM MỚI — phục vụ chức năng Random nâng cao (lọc theo thể loại) =====
-  // Dùng lại đúng bảng trung gian "movie_genres" đã có sẵn trong DB (movie_id, genre_id)
-  // Không tạo bảng mới, không đổi schema — chỉ khai báo quan hệ để TypeORM biết JOIN qua đâu
+  // ===== Quan hệ thể loại — dùng cho Random nâng cao + Bộ lọc (lọc AND theo thể loại) =====
   @ManyToMany(() => Genre)
   @JoinTable({
     name: 'movie_genres',
@@ -60,4 +62,14 @@ export class Movie {
     inverseJoinColumn: { name: 'genre_id', referencedColumnName: 'id' },
   })
   genres: Genre[];
+
+  // ===== THÊM MỚI — Quan hệ quốc gia, dùng cho Bộ lọc (lọc theo quốc gia) =====
+  // Tái dùng bảng trung gian movie_countries có sẵn trong DB (movie_id, country_id)
+  @ManyToMany(() => Country)
+  @JoinTable({
+    name: 'movie_countries',
+    joinColumn: { name: 'movie_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'country_id', referencedColumnName: 'id' },
+  })
+  countries: Country[];
 }
