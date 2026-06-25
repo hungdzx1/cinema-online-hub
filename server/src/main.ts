@@ -20,14 +20,14 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: true,
     credentials: true,
   });
 
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  const port = process.env.PORT ?? 8000;
+  await app.listen(port, '0.0.0.0');
 
   // ② LOGGER - in khi server khởi động
   logger.log(`🚀 Server đang chạy tại http://localhost:${port}/api`);

@@ -7,6 +7,7 @@ import * as path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/Database.module';
+import { MailModule } from './mail/mail.module';
 
 // ── Các module chức năng ──────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -61,6 +62,7 @@ import { AdminModule } from './modules/admin/admin.module';
     CountriesModule,
     NotificationsModule,
     AdminModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

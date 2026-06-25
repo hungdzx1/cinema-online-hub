@@ -9,26 +9,29 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
+import { MailService } from '../../mail/mail.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
-  // Logger riêng cho AuthService - log sẽ hiện [AuthService]
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private usersService: UsersService,
-    private jwtService: JwtService,
+    private readonly userRepository: Repository<User>,
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
-  // ── ĐĂNG KÝ ──────────────────────────────────────────
   async register(registerDto: RegisterDto) {
     const { username, email, password } = registerDto;
     this.logger.log(`Yêu cầu đăng ký: ${email}`);
@@ -53,7 +56,6 @@ export class AuthService {
     return { message: 'Đăng ký thành công', userId: user.id };
   }
 
-  // ── ĐĂNG NHẬP ────────────────────────────────────────
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
     this.logger.log(`Yêu cầu đăng nhập: ${email}`);
@@ -92,7 +94,6 @@ export class AuthService {
     };
   }
 
-  // ── ĐỔI MẬT KHẨU ─────────────────────────────────────
   async changePassword(userId: number, dto: ChangePasswordDto) {
     const { oldPassword, newPassword } = dto;
     this.logger.log(`Yêu cầu đổi mật khẩu: user id=${userId}`);
@@ -111,7 +112,6 @@ export class AuthService {
     return { message: 'Đổi mật khẩu thành công' };
   }
 
-  // ── TẠO JWT TOKEN ────────────────────────────────────
   private generateToken(user: User): string {
     const payload: JwtPayload = {
       sub: user.id,
@@ -119,5 +119,58 @@ export class AuthService {
       role: user.role,
     };
     return this.jwtService.sign(payload);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      this.logger.warn(`Forgot password: email không tồn tại - ${dto.email}`);
+      return {
+        message:
+          'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.',
+      };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetToken = resetToken;
+    user.resetTokenExpires = resetTokenExpires;
+    await this.userRepository.save(user);
+
+    await this.mailService.sendResetPasswordEmail(user.email, resetToken);
+    this.logger.log(`Đã tạo token reset mật khẩu cho user id=${user.id}`);
+
+    return {
+      message:
+        'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { resetToken: dto.token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Mã đặt lại mật khẩu không hợp lệ');
+    }
+
+    if (!user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+      throw new BadRequestException(
+        'Mã đặt lại mật khẩu đã hết hạn, vui lòng yêu cầu lại',
+      );
+    }
+
+    user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    user.resetToken = null;
+    user.resetTokenExpires = null;
+    await this.userRepository.save(user);
+
+    this.logger.log(`Đặt lại mật khẩu thành công cho user id=${user.id}`);
+    return { message: 'Đặt lại mật khẩu thành công, vui lòng đăng nhập lại' };
   }
 }
