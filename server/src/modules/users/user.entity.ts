@@ -42,4 +42,11 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  // SỬA TẠI ĐÂY: Thêm type: 'varchar' để TypeORM không bị nhận diện nhầm thành "Object"
+  @Column({ name: 'reset_token', type: 'varchar', length: 255, nullable: true })
+  resetToken: string | null;
+
+  @Column({ name: 'reset_token_expires', type: 'datetime', nullable: true })
+  resetTokenExpires: Date | null;
 }

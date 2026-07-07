@@ -9,13 +9,13 @@ import { JwtStrategy } from './auth.strategy';
 import { RefreshToken } from './refresh-token.entity';
 import { User } from '../users/user.entity';
 import { UsersModule } from '../users/users.module';
-
+import { MailModule } from '../../mail/mail.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, RefreshToken]),
     UsersModule,
-    PassportModule,
-
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
