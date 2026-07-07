@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
@@ -18,9 +19,10 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { AuthGuard } from '@nestjs/passport';
 @Controller('movies')
 export class MoviesController {
-  constructor(private readonly moviesService: MoviesService) {}
+  constructor(private readonly moviesService: MoviesService) { }
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -31,6 +33,14 @@ export class MoviesController {
   findAll() {
     return this.moviesService.findAll();
   }
+
+  // @UseGuards(AuthGuard('jwt')) // Tự động chặn và kiểm tra JWT trong cookie
+  // @Get('profile')
+  // getProfile(@Request() req: any) {
+  //   // Lấy thông tin user đã đăng nhập từ req.user
+  //   return { user: req.user };
+  // }
+
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {
     return this.moviesService.findBySlug(slug);

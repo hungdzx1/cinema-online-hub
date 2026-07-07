@@ -139,6 +139,7 @@ export class MoviesService {
   // ===== THÊM MỚI — BỘ LỌC: lọc nhiều điều kiện AND + sắp xếp + phân trang =====
   async filterMovies(filters: FilterMovieDto) {
     const {
+      keyword,
       countryId,
       type,
       genreIds,
@@ -151,6 +152,14 @@ export class MoviesService {
     const qb = this.movieRepository
       .createQueryBuilder('movie')
       .where('movie.isVisible = :visible', { visible: true });
+
+    // Lọc theo từ khóa (tiêu đề hoặc slug)
+    if (keyword) {
+      qb.andWhere(
+        '(LOWER(movie.title) LIKE LOWER(:keyword) OR LOWER(movie.slug) LIKE LOWER(:keyword))',
+        { keyword: `%${keyword}%` },
+      );
+    }
 
     // Lọc loại phim
     if (type) {

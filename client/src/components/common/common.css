@@ -1,0 +1,143 @@
+/* ----- Button ----- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-primary-gradient);
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-dark {
+  background: var(--bg-button);
+  color: var(--text-secondary);
+}
+.btn-dark:hover {
+  background: var(--bg-button-hover);
+  color: var(--text-primary);
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* ----- Search Input ----- */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: var(--bg-button);
+  border-radius: 20px;
+  padding: 6px 16px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+.search-container:focus-within {
+  border-color: var(--color-primary);
+}
+.search-icon {
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+.search-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  width: 100%;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ----- Movie Card ----- */
+.movie-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  /* Đảm bảo mọi card chiếm đúng 1 ô grid, không tràn ra ngoài */
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.movie-card:hover .movie-poster {
+  transform: scale(1.03);
+}
+
+.movie-poster-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.movie-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.movie-rating {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-warning);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.movie-info-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.movie-rank {
+  font-size: 40px;
+  font-weight: 800;
+  font-style: italic;
+  color: var(--color-warning);
+  line-height: 1;
+  margin-top: -4px;
+}
+
+.movie-titles {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.movie-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.movie-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}

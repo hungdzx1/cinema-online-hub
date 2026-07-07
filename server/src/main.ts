@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import compression from 'compression';
 import { AppModule } from './app.module';
 
@@ -33,3 +34,5 @@ async function bootstrap() {
   logger.log(`🚀 Server đang chạy tại http://localhost:${port}/api`);
 }
 void bootstrap();
+
+  

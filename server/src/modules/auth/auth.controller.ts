@@ -30,6 +30,8 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  
+
   // PATCH /auth/change-password — Đổi mật khẩu (cần đăng nhập)
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)

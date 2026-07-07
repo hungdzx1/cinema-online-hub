@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import * as path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -39,12 +39,10 @@ import { AdminModule } from './modules/admin/admin.module';
 
     // Rate Limiting - chống spam/brute-force
     // Trong 60 giây, 1 IP chỉ được gọi tối đa 20 request
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 20,
-      },
-    ]),
+    // ThrottlerModule.forRoot({
+    //   ttl: 60, // seconds
+    //   limit: 20,
+    // } as any),
 
     DatabaseModule,
     AuthModule,
@@ -65,11 +63,7 @@ import { AdminModule } from './modules/admin/admin.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Áp dụng Rate Limiting cho TOÀN BỘ API tự động
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
   ],
+
 })
 export class AppModule {}

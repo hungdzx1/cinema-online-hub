@@ -5,6 +5,7 @@ import {
   IsInt,
   IsIn,
   Min,
+  IsString,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { MovieType } from '../../../common/enums/movie-type.enum';
@@ -12,6 +13,11 @@ import { MovieType } from '../../../common/enums/movie-type.enum';
 // (số dấu "../" có thể khác tùy độ sâu thư mục dto/)
 
 export class FilterMovieDto {
+  // Từ khóa tìm kiếm (theo title hoặc slug)
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
   // Quốc gia — lọc phim thuộc 1 quốc gia (không gửi = tất cả quốc gia)
   @IsOptional()
   @Type(() => Number)

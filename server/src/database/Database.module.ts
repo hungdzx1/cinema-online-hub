@@ -28,6 +28,13 @@ import * as fs from 'fs';
 
           autoLoadEntities: true,
           synchronize: false,
+          extra: {
+            connectionLimit: 10,      // Giới hạn số lượng kết nối đồng thời
+            waitForConnections: true,
+            queueLimit: 0,
+            keepAliveInitialDelay: 10000, // Tự động gửi tín hiệu giữ kết nối sống
+            enableKeepAlive: true
+          }
         };
       },
     }),
