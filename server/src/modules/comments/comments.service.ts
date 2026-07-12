@@ -40,6 +40,7 @@ export class CommentsService {
   async findByMovie(movieId: number): Promise<CommentEntity[]> {
     return this.commentRepository.find({
       where: { movieId, isHidden: false },
+      relations: { user: true },
       order: { createdAt: 'DESC' },
     });
   }

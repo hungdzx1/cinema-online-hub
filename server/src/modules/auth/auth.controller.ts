@@ -31,11 +31,7 @@ export class AuthController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
-<<<<<<< HEAD
 
-  
-
-=======
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
@@ -44,7 +40,6 @@ export class AuthController {
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
->>>>>>> b566bbe2c6944bab1e98d49b1d48cb3d4baaf0e0
   // PATCH /auth/change-password — Đổi mật khẩu (cần đăng nhập)
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)

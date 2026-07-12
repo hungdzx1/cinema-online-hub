@@ -5,6 +5,11 @@ export class UpdateEpisodeDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  movieId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   episodeNumber?: number;
 
   @IsOptional()

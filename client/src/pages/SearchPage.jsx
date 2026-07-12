@@ -76,7 +76,7 @@ export const SearchPage = () => {
   return (
     <MainLayout>
       <div className="search-page container">
-        <div className="search-container">
+        <div className="search-layout">
           
           {/* Cột trái: Bộ lọc (Sidebar) */}
           <aside className="search-sidebar">

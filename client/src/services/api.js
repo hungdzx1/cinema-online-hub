@@ -6,7 +6,7 @@ export const BASE_URL = 'http://localhost:3000'; // ĐIỀN BASE URL CỦA BẠN
 
 // Khởi tạo instance của axios với các cài đặt chung
 const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: `${BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },

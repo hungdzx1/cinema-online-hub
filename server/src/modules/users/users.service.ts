@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +22,7 @@ export class UsersService {
         isBanned: true,
         createdAt: true,
         lastLogin: true,
+        avatarUrl: true,
       },
     });
   }
@@ -55,9 +57,16 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
+  async updateRole(id: number, role: UserRole): Promise<User> {
+    const user = await this.findById(id);
+    user.role = role;
+    return this.userRepository.save(user);
+  }
+
   // Xóa user (Admin)
   async remove(id: number): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.remove(user);
   }
 }
+

@@ -34,6 +34,13 @@ export class MoviesController {
     return this.moviesService.findAll();
   }
 
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findAllAdmin() {
+    return this.moviesService.findAllAdmin();
+  }
+
   // @UseGuards(AuthGuard('jwt')) // Tự động chặn và kiểm tra JWT trong cookie
   // @Get('profile')
   // getProfile(@Request() req: any) {
@@ -44,6 +51,11 @@ export class MoviesController {
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {
     return this.moviesService.findBySlug(slug);
+  }
+
+  @Get('detail/:slug')
+  getMovieDetail(@Param('slug') slug: string) {
+    return this.moviesService.getMovieDetail(slug);
   }
 
   // ⚠️ Tất cả route TĨNH (random, filter) PHẢI đặt TRƯỚC @Get(':id')

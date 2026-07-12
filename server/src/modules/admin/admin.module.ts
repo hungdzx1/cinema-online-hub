@@ -6,12 +6,14 @@ import { User } from '../users/user.entity';
 import { Movie } from '../movies/movies.entity';
 import { CommentEntity } from '../comments/comment.entity';
 import { ErrorReport } from '../error-reports/error-report.entity';
+import { Genre } from '../genres/genre.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Movie, CommentEntity, ErrorReport]),
+    TypeOrmModule.forFeature([User, Movie, CommentEntity, ErrorReport, Genre]),
   ],
   controllers: [AdminController],
   providers: [AdminService],
 })
 export class AdminModule {}
+

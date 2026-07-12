@@ -45,4 +45,12 @@ export class CreateMovieDto {
   @IsBoolean()
   @IsOptional()
   isFeatured?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isVisible?: boolean;
+
+  @IsString()
+  @IsOptional()
+  scheduleDate?: string;
 }

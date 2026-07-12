@@ -1,9 +1,9 @@
-
+import { Link } from 'react-router-dom';
 import './common.css';
 
 export const MovieCard = ({ movie, rank }) => {
   return (
-    <div className="movie-card">
+    <Link to={`/movie/${movie.slug}`} className="movie-card" style={{ textDecoration: 'none' }}>
       <div className="movie-poster-wrapper">
         <img 
           src={movie.posterUrl || 'https://placehold.co/300x450/141414/FFF'} 
@@ -32,6 +32,6 @@ export const MovieCard = ({ movie, rank }) => {
           </p>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };

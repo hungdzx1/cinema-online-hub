@@ -52,6 +52,13 @@ export class UsersController {
     return this.usersService.toggleBan(+id);
   }
 
+  @Patch(':id/role')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  updateRole(@Param('id') id: string, @Body('role') role: UserRole) {
+    return this.usersService.updateRole(+id, role);
+  }
+
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -59,3 +66,4 @@ export class UsersController {
     return this.usersService.remove(+id);
   }
 }
+

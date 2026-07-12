@@ -16,6 +16,11 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
+  @Get('genre-stats')
+  getGenreStats() {
+    return this.adminService.getGenreStats();
+  }
+
   @Get('top-movies')
   getTopMovies() {
     return this.adminService.getTopMovies();
@@ -26,3 +31,4 @@ export class AdminController {
     return this.adminService.getRecentUsers();
   }
 }
+

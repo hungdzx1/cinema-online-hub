@@ -32,7 +32,7 @@ export const Footer = () => {
       </div>
       <div className="footer-bottom">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} Hoạt Hình 3D. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Phim Hay 24h. All rights reserved.</p>
         </div>
       </div>
     </footer>

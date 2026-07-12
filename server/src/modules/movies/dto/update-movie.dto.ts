@@ -49,4 +49,8 @@ export class UpdateMovieDto {
   @IsOptional()
   @IsBoolean()
   isVisible?: boolean;
+
+  @IsOptional()
+  @IsString()
+  scheduleDate?: string;
 }
