@@ -9,7 +9,7 @@ export class WatchHistoryService {
   constructor(
     @InjectRepository(WatchHistory)
     private historyRepository: Repository<WatchHistory>,
-  ) {}
+  ) { }
 
   async saveProgress(
     userId: number,
@@ -20,7 +20,9 @@ export class WatchHistoryService {
     });
 
     if (existed) {
-      existed.progressSeconds = dto.progressSeconds ?? 0;
+      if (dto.progressSeconds !== undefined) {
+        existed.progressSeconds = dto.progressSeconds;
+      }
       return this.historyRepository.save(existed);
     }
 
@@ -36,6 +38,7 @@ export class WatchHistoryService {
   async findByUser(userId: number): Promise<WatchHistory[]> {
     return this.historyRepository.find({
       where: { userId },
+      relations: { movie: true, episode: true },
       order: { watchedAt: 'DESC' },
     });
   }

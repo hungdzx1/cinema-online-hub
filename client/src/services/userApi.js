@@ -6,6 +6,14 @@ const getAuthHeaders = () => {
 };
 
 export const userApi = {
+  // Get current user profile
+  getMe: () =>
+    fetchApi('/users/me', { ...getAuthHeaders() }),
+
+  // Update current user profile
+  updateMe: (data) =>
+    fetchApi('/users/me', { method: 'PATCH', data, ...getAuthHeaders() }),
+
   // Get all users (admin)
   getAll: () =>
     fetchApi('/users', { ...getAuthHeaders() }),

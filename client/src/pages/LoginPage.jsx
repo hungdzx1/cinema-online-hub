@@ -65,7 +65,7 @@ export const LoginPage = () => {
     }
   }, [isLoggedIn, user, navigate]);
 
-  // 'login' | 'register'
+  // 'login' | 'register' | 'forgot'
   const [mode, setMode] = useState('login');
 
   // Form fields
@@ -92,8 +92,12 @@ export const LoginPage = () => {
     const errs = {};
     if (!email.trim()) errs.email = 'Vui lòng nhập email';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email không hợp lệ';
-    if (!password) errs.password = 'Vui lòng nhập mật khẩu';
-    else if (mode === 'register' && password.length < 8) errs.password = 'Mật khẩu ít nhất 8 ký tự';
+
+    if (mode !== 'forgot') {
+      if (!password) errs.password = 'Vui lòng nhập mật khẩu';
+      else if (mode === 'register' && password.length < 8) errs.password = 'Mật khẩu ít nhất 8 ký tự';
+    }
+
     if (mode === 'register' && !username.trim()) errs.username = 'Vui lòng nhập tên đăng nhập';
     return errs;
   };
@@ -116,11 +120,15 @@ export const LoginPage = () => {
         } else {
           navigate('/');
         }
-      } else {
+      } else if (mode === 'register') {
         await authApi.register({ username, email, password });
         setSuccess('Đăng ký thành công! Hãy đăng nhập.');
         switchMode('login');
         setEmail(email); // giữ lại email sau khi chuyển tab
+      } else if (mode === 'forgot') {
+        const res = await authApi.forgotPassword({ email: email.trim() });
+        setSuccess(res.message || 'Yêu cầu đặt lại mật khẩu đã được gửi đến email của bạn.');
+        setEmail('');
       }
     } catch (err) {
       const msg =
@@ -137,35 +145,47 @@ export const LoginPage = () => {
     <div className="login-page">
       <div className="login-card">
 
-        {/* Logo */}
-        <div className="login-logo">
-          <div className="login-logo-text">
-            Phim Hay <span>24h</span>
+        {/* Logo or Title */}
+        {mode === 'forgot' ? (
+          <div className="login-logo">
+            <div className="login-logo-text" style={{ fontSize: '24px' }}>
+              Quên mật khẩu?
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="login-logo">
+            <div className="login-logo-text">
+              Phim Hay <span>24h</span>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
-        <div className="login-tabs">
-          <button
-            id="tab-login"
-            className={`login-tab${mode === 'login' ? ' active' : ''}`}
-            onClick={() => switchMode('login')}
-          >
-            Đăng nhập
-          </button>
-          <button
-            id="tab-register"
-            className={`login-tab${mode === 'register' ? ' active' : ''}`}
-            onClick={() => switchMode('register')}
-          >
-            Đăng ký
-          </button>
-        </div>
+        {mode !== 'forgot' && (
+          <div className="login-tabs">
+            <button
+              id="tab-login"
+              className={`login-tab${mode === 'login' ? ' active' : ''}`}
+              onClick={() => switchMode('login')}
+            >
+              Đăng nhập
+            </button>
+            <button
+              id="tab-register"
+              className={`login-tab${mode === 'register' ? ' active' : ''}`}
+              onClick={() => switchMode('register')}
+            >
+              Đăng ký
+            </button>
+          </div>
+        )}
 
         <p className="login-subtitle">
           {mode === 'login'
             ? 'Chào mừng trở lại! Đăng nhập để tiếp tục xem phim.'
-            : 'Tạo tài khoản miễn phí, thưởng thức phim không giới hạn.'}
+            : mode === 'register'
+            ? 'Tạo tài khoản miễn phí, thưởng thức phim không giới hạn.'
+            : 'Nhập email của bạn để chúng tôi gửi mã/link khôi phục mật khẩu.'}
         </p>
 
         {/* Global messages */}
@@ -212,31 +232,72 @@ export const LoginPage = () => {
             {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
           </div>
 
-          {/* Password */}
-          <div className="login-field">
-            <label className="login-label" htmlFor="auth-password">Mật khẩu</label>
-            <div className="login-input-wrapper">
-              <span className="login-input-icon"><LockIcon /></span>
-              <input
-                id="auth-password"
-                type={showPw ? 'text' : 'password'}
-                className={`login-input${fieldErrors.password ? ' error' : ''}`}
-                placeholder={mode === 'register' ? 'Ít nhất 6 ký tự' : 'Nhập mật khẩu'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              />
-              <button
-                type="button"
-                className="login-pw-toggle"
-                onClick={() => setShowPw(v => !v)}
-                aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              >
-                {showPw ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
+          {/* Password (login only) */}
+          {mode === 'login' && (
+            <div className="login-field">
+              <label className="login-label" htmlFor="auth-password">Mật khẩu</label>
+              <div className="login-input-wrapper">
+                <span className="login-input-icon"><LockIcon /></span>
+                <input
+                  id="auth-password"
+                  type={showPw ? 'text' : 'password'}
+                  className={`login-input${fieldErrors.password ? ' error' : ''}`}
+                  placeholder="Nhập mật khẩu"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-pw-toggle"
+                  onClick={() => setShowPw(v => !v)}
+                  aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
+              
+              {/* Forgot password link */}
+              <div className="login-forgot-wrap">
+                <button
+                  type="button"
+                  className="login-forgot-link"
+                  onClick={() => switchMode('forgot')}
+                >
+                  Quên mật khẩu?
+                </button>
+              </div>
             </div>
-            {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
-          </div>
+          )}
+
+          {/* Password (register only) */}
+          {mode === 'register' && (
+            <div className="login-field">
+              <label className="login-label" htmlFor="reg-password">Mật khẩu</label>
+              <div className="login-input-wrapper">
+                <span className="login-input-icon"><LockIcon /></span>
+                <input
+                  id="reg-password"
+                  type={showPw ? 'text' : 'password'}
+                  className={`login-input${fieldErrors.password ? ' error' : ''}`}
+                  placeholder="Ít nhất 8 ký tự"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="login-pw-toggle"
+                  onClick={() => setShowPw(v => !v)}
+                  aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
+            </div>
+          )}
 
           {/* Submit */}
           <button
@@ -246,9 +307,27 @@ export const LoginPage = () => {
             disabled={loading}
           >
             {loading && <span className="btn-spinner" />}
-            {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
+            {mode === 'login'
+              ? 'Đăng nhập'
+              : mode === 'register'
+              ? 'Tạo tài khoản'
+              : 'Gửi link khôi phục'}
           </button>
         </form>
+
+        {/* Back to Login link (forgot mode only) */}
+        {mode === 'forgot' && (
+          <div className="login-forgot-wrap" style={{ justifyContent: 'center', marginTop: 18 }}>
+            <button
+              type="button"
+              className="login-forgot-link"
+              onClick={() => switchMode('login')}
+              style={{ fontSize: '14px', textDecoration: 'underline' }}
+            >
+              Quay lại đăng nhập
+            </button>
+          </div>
+        )}
 
         <div className="login-divider">hoặc</div>
 

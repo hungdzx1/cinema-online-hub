@@ -10,9 +10,9 @@ export const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
   const genreIdsParam = searchParams.get('genreIds');
-  
-  const selectedGenreIds = genreIdsParam 
-    ? genreIdsParam.split(',').map(Number) 
+
+  const selectedGenreIds = genreIdsParam
+    ? genreIdsParam.split(',').map(Number)
     : [];
 
   const [genres, setGenres] = useState([]);
@@ -63,7 +63,7 @@ export const SearchPage = () => {
     const newSelected = selectedGenreIds.includes(genreId)
       ? selectedGenreIds.filter(id => id !== genreId)
       : [...selectedGenreIds, genreId];
-    
+
     // Cập nhật lại thanh địa chỉ
     if (newSelected.length > 0) {
       searchParams.set('genreIds', newSelected.join(','));
@@ -77,7 +77,7 @@ export const SearchPage = () => {
     <MainLayout>
       <div className="search-page container">
         <div className="search-layout">
-          
+
           {/* Cột trái: Bộ lọc (Sidebar) */}
           <aside className="search-sidebar">
             <div className="filter-group">
@@ -85,8 +85,8 @@ export const SearchPage = () => {
               <div className="filter-list">
                 {genres.map(genre => (
                   <label key={genre.id} className="filter-label">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="filter-checkbox"
                       checked={selectedGenreIds.includes(genre.id)}
                       onChange={() => handleGenreChange(genre.id)}

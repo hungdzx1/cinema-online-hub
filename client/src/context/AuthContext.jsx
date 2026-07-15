@@ -37,8 +37,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  // Cập nhật một phần thông tin user (không cần truyền lại token)
+  const updateUser = useCallback((partialUser) => {
+    setUser(prev => prev ? { ...prev, ...partialUser } : prev);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoggedIn: !!user }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoggedIn: !!user }}>
       {children}
     </AuthContext.Provider>
   );

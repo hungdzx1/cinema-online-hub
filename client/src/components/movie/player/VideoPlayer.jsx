@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { historyApi } from '../../../services/historyApi';
 import { ProgressBar } from './ProgressBar';
 import { VolumeControl } from './VolumeControl';
 import { SettingsMenu } from './SettingsMenu';
@@ -12,12 +14,15 @@ const getYoutubeId = (url) => {
 };
 
 export const VideoPlayer = ({ 
+  movieId,
+  episodeId,
   movieSlug,
   embedUrl, 
   currentEpisodeNumber, 
   totalEpisodes = 1,
   onSelectEpisode 
 }) => {
+  const { isLoggedIn } = useAuth();
   const videoRef = useRef(null);
   const wrapperRef = useRef(null);
   const ytContainerRef = useRef(null);
@@ -68,17 +73,39 @@ export const VideoPlayer = ({
   const isYoutube = useMemo(() => {
     if (!embedUrl) return false;
     const urlLower = embedUrl.toLowerCase();
-    return urlLower.includes('youtube.com') || urlLower.includes('youtu.be') || urlLower.includes('embed');
+    const isYtHost = urlLower.includes('youtube.com') || urlLower.includes('youtu.be');
+    if (!isYtHost) return false;
+    return !!getYoutubeId(embedUrl);
   }, [embedUrl]);
+
+  const isIframe = useMemo(() => {
+    if (!embedUrl) return false;
+    if (isYoutube) return false;
+
+    const urlLower = embedUrl.toLowerCase();
+    try {
+      const urlObj = new URL(embedUrl);
+      const pathname = urlObj.pathname.toLowerCase();
+      const isDirectVideo = pathname.endsWith('.mp4') || 
+                            pathname.endsWith('.webm') || 
+                            pathname.endsWith('.ogg') || 
+                            pathname.endsWith('.m3u8') || 
+                            pathname.endsWith('.mkv');
+      return !isDirectVideo;
+    } catch (e) {
+      const isDirectVideo = urlLower.endsWith('.mp4') || 
+                            urlLower.endsWith('.webm') || 
+                            urlLower.endsWith('.ogg') || 
+                            urlLower.endsWith('.m3u8') || 
+                            urlLower.endsWith('.mkv');
+      return urlLower.startsWith('http') && !isDirectVideo;
+    }
+  }, [embedUrl, isYoutube]);
 
   const videoSource = useMemo(() => {
     if (!embedUrl) return '';
-    if (isYoutube) {
-      // If YouTube, this won't be used by HTML5 video player but we return it anyway
-      return embedUrl;
-    }
     return embedUrl;
-  }, [embedUrl, isYoutube]);
+  }, [embedUrl]);
 
   // YouTube API Integration
   useEffect(() => {
@@ -203,6 +230,9 @@ export const VideoPlayer = ({
           // Save history every 5 seconds
           if (Math.floor(time) % 5 === 0) {
             localStorage.setItem(`cinema_history_${movieSlug}_${currentEpisodeNumber}`, String(time));
+            if (isLoggedIn && movieId && episodeId) {
+              historyApi.saveProgress(movieId, episodeId, Math.floor(time)).catch(() => {});
+            }
           }
 
           // Next episode trigger
@@ -242,7 +272,12 @@ export const VideoPlayer = ({
       setResumeTime(parseFloat(savedTime));
       setShowResumeDialog(true);
     }
-  }, [videoSource, currentEpisodeNumber, movieSlug]);
+
+    // Auto-update history to mark as watched immediately (if logged in)
+    if (isLoggedIn && movieId && episodeId) {
+      historyApi.saveProgress(movieId, episodeId).catch(() => {});
+    }
+  }, [videoSource, currentEpisodeNumber, movieSlug, isLoggedIn, movieId, episodeId]);
 
   // Idle timer to auto hide controls
   const handleMouseMove = () => {
@@ -273,6 +308,9 @@ export const VideoPlayer = ({
     // Save history every 5 seconds
     if (Math.floor(time) % 5 === 0) {
       localStorage.setItem(`cinema_history_${movieSlug}_${currentEpisodeNumber}`, String(time));
+      if (isLoggedIn && movieId && episodeId) {
+        historyApi.saveProgress(movieId, episodeId, Math.floor(time)).catch(() => {});
+      }
     }
 
     // Trigger autoplay next episode overlay 10 seconds before video end
@@ -519,7 +557,7 @@ export const VideoPlayer = ({
   return (
     <div 
       ref={wrapperRef}
-      className={`custom-video-player-wrapper ${isPlaying ? '' : 'paused'} ${showControls ? 'show-controls' : 'hide-cursor'}`}
+      className={`custom-video-player-wrapper ${isIframe ? 'iframe-mode' : ''} ${isPlaying ? '' : 'paused'} ${showControls ? 'show-controls' : 'hide-cursor'}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => {
         if (isPlaying) {
@@ -534,6 +572,17 @@ export const VideoPlayer = ({
           key={embedUrl}
           ref={ytContainerRef}
           style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+        />
+      ) : isIframe ? (
+        <iframe
+          key={embedUrl}
+          src={embedUrl}
+          title="Movie Player"
+          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="iframe-video-element"
+          onLoad={() => setIsLoading(false)}
         />
       ) : (
         <video
@@ -571,30 +620,38 @@ export const VideoPlayer = ({
       )}
 
       {/* Transparent overlay above video and iframe to capture custom mouse inputs */}
-      <div 
-        className="player-video-overlay" 
-        onClick={handlePlayPause}
-        onDoubleClick={handleDoubleSeek}
-      />
+      {!isIframe && (
+        <div 
+          className="player-video-overlay" 
+          onClick={handlePlayPause}
+          onDoubleClick={handleDoubleSeek}
+        />
+      )}
 
       {/* Ripple Seek Ripple Indicator overlays */}
-      <div className={`double-click-ripple-overlay left ${rippleState.show && rippleState.side === 'left' ? 'active' : ''}`}>
-        <span className="ripple-arrows">◀◀◀</span>
-        <span>Lùi 10 giây</span>
-      </div>
-      <div className={`double-click-ripple-overlay right ${rippleState.show && rippleState.side === 'right' ? 'active' : ''}`}>
-        <span className="ripple-arrows">▶▶▶</span>
-        <span>Tiến 10 giây</span>
-      </div>
+      {!isIframe && (
+        <>
+          <div className={`double-click-ripple-overlay left ${rippleState.show && rippleState.side === 'left' ? 'active' : ''}`}>
+            <span className="ripple-arrows">◀◀◀</span>
+            <span>Lùi 10 giây</span>
+          </div>
+          <div className={`double-click-ripple-overlay right ${rippleState.show && rippleState.side === 'right' ? 'active' : ''}`}>
+            <span className="ripple-arrows">▶▶▶</span>
+            <span>Tiến 10 giây</span>
+          </div>
+        </>
+      )}
 
       {/* Large central play/pause overlay */}
-      <div className="player-pause-overlay" onClick={handlePlayPause}>
-        <div className="player-pause-icon-circle">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
+      {!isIframe && (
+        <div className="player-pause-overlay" onClick={handlePlayPause}>
+          <div className="player-pause-icon-circle">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Loading Overlay */}
       {isLoading && !hasError && (
@@ -621,7 +678,7 @@ export const VideoPlayer = ({
       )}
 
       {/* Resume Watch History dialog */}
-      {showResumeDialog && (
+      {!isIframe && showResumeDialog && (
         <div className="watch-resume-dialog">
           <span>Tiếp tục xem từ {formatTimeText(resumeTime)}?</span>
           <button className="watch-resume-btn" onClick={() => handleResume(true)}>Xem tiếp</button>
@@ -630,7 +687,7 @@ export const VideoPlayer = ({
       )}
 
       {/* Autoplay Next Episode Countdown dialog */}
-      {showAutoplayOverlay && (
+      {!isIframe && showAutoplayOverlay && (
         <div className="player-autoplay-overlay">
           <span style={{ fontWeight: 'bold' }}>Tập tiếp theo sau {autoplayCountdown} giây</span>
           <div className="autoplay-buttons">
@@ -644,7 +701,7 @@ export const VideoPlayer = ({
       )}
 
       {/* Settings Menu Popup */}
-      {showSettings && (
+      {!isIframe && showSettings && (
         <SettingsMenu
           playbackRate={playbackRate}
           onPlaybackRateChange={(rate) => {
@@ -659,97 +716,99 @@ export const VideoPlayer = ({
       )}
 
       {/* Overlay Control Bar */}
-      <div className="player-controls-overlay">
-        {/* Progress scrub bar */}
-        <ProgressBar
-          currentTime={currentTime}
-          duration={duration}
-          bufferedProgress={bufferedProgress}
-          onSeek={handleSeek}
-        />
+      {!isIframe && (
+        <div className="player-controls-overlay">
+          {/* Progress scrub bar */}
+          <ProgressBar
+            currentTime={currentTime}
+            duration={duration}
+            bufferedProgress={bufferedProgress}
+            onSeek={handleSeek}
+          />
 
-        <div className="player-controls-row">
-          {/* Left Controls */}
-          <div className="player-controls-left">
-            {/* Play / Pause */}
-            <button className="player-ctrl-btn" onClick={handlePlayPause}>
-              {isPlaying ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+          <div className="player-controls-row">
+            {/* Left Controls */}
+            <div className="player-controls-left">
+              {/* Play / Pause */}
+              <button className="player-ctrl-btn" onClick={handlePlayPause}>
+                {isPlaying ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Skip Back 10s */}
+              <button className="player-ctrl-btn" title="Lùi 10s" onClick={() => handleSkip(-10)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
                 </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3" />
+              </button>
+
+              {/* Skip Forward 10s */}
+              <button className="player-ctrl-btn" title="Tiến 10s" onClick={() => handleSkip(10)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
                 </svg>
-              )}
-            </button>
+              </button>
 
-            {/* Skip Back 10s */}
-            <button className="player-ctrl-btn" title="Lùi 10s" onClick={() => handleSkip(-10)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
-            </button>
+              {/* Volume */}
+              <VolumeControl
+                volume={volume}
+                isMuted={isMuted}
+                onVolumeChange={(v) => {
+                  setVolume(v);
+                  setIsMuted(v === 0);
+                }}
+                onToggleMute={() => setIsMuted(prev => !prev)}
+              />
 
-            {/* Skip Forward 10s */}
-            <button className="player-ctrl-btn" title="Tiến 10s" onClick={() => handleSkip(10)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-              </svg>
-            </button>
+              {/* Time Display */}
+              <div className="player-time-display">
+                {formatTimeText(currentTime)} / {formatTimeText(duration)}
+              </div>
+            </div>
 
-            {/* Volume */}
-            <VolumeControl
-              volume={volume}
-              isMuted={isMuted}
-              onVolumeChange={(v) => {
-                setVolume(v);
-                setIsMuted(v === 0);
-              }}
-              onToggleMute={() => setIsMuted(prev => !prev)}
-            />
+            {/* Right Controls */}
+            <div className="player-controls-right">
+              {/* Settings trigger */}
+              <button className="player-ctrl-btn" title="Cài đặt" onClick={() => setShowSettings(!showSettings)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
 
-            {/* Time Display */}
-            <div className="player-time-display">
-              {formatTimeText(currentTime)} / {formatTimeText(duration)}
+              {/* Picture in Picture */}
+              <button className="player-ctrl-btn" title="Picture in Picture" onClick={togglePip}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                  <rect x="13" y="13" width="7" height="7" />
+                </svg>
+              </button>
+
+              {/* Fullscreen */}
+              <button className="player-ctrl-btn" title="Toàn màn hình" onClick={toggleFullscreen}>
+                {isFullscreen ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M10 14l-7 7" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /><path d="M10 14l-7 7" /><path d="M14 10l7-7" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
-
-          {/* Right Controls */}
-          <div className="player-controls-right">
-            {/* Settings trigger */}
-            <button className="player-ctrl-btn" title="Cài đặt" onClick={() => setShowSettings(!showSettings)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
-
-            {/* Picture in Picture */}
-            <button className="player-ctrl-btn" title="Picture in Picture" onClick={togglePip}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="2.18" />
-                <rect x="13" y="13" width="7" height="7" />
-              </svg>
-            </button>
-
-            {/* Fullscreen */}
-            <button className="player-ctrl-btn" title="Toàn màn hình" onClick={toggleFullscreen}>
-              {isFullscreen ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M10 14l-7 7" />
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /><path d="M10 14l-7 7" /><path d="M14 10l7-7" />
-                </svg>
-              )}
-            </button>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

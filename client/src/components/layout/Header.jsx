@@ -80,8 +80,20 @@ export const Header = () => {
           </div>
 
           <div className="action-section">
-            <Button variant="dark" icon={<HistoryIcon size={18} />}>Lịch sử</Button>
-            <Button variant="dark" icon={<BookmarkIcon size={18} />}>Theo dõi</Button>
+            <Button 
+              variant="dark" 
+              icon={<HistoryIcon size={18} />}
+              onClick={() => navigate(isLoggedIn ? '/profile?tab=history' : '/login')}
+            >
+              Lịch sử
+            </Button>
+            <Button 
+              variant="dark" 
+              icon={<BookmarkIcon size={18} />}
+              onClick={() => navigate(isLoggedIn ? '/watchlist' : '/login')}
+            >
+              Theo dõi
+            </Button>
 
             {/* Theme Toggle */}
             <button
@@ -153,7 +165,7 @@ export const Header = () => {
                       Hồ sơ cá nhân
                     </button>
 
-                    <button className="user-dropdown-item" role="menuitem" onClick={() => { navigate('/history'); setDropdownOpen(false); }}>
+                    <button className="user-dropdown-item" role="menuitem" onClick={() => { navigate('/profile?tab=history'); setDropdownOpen(false); }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                       </svg>

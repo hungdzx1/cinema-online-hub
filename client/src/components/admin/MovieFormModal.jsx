@@ -23,6 +23,80 @@ export const MovieFormModal = ({ movie, onClose, onSaved }) => {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh (jpg, png, webp…).');
+      return;
+    }
+
+    setUploadingBanner(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'phimhay24h');
+      formData.append('folder', 'banners');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/lhow11kv/image/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error('Upload banner thất bại');
+      }
+
+      const data = await res.json();
+      handleChange('bannerUrl', data.secure_url);
+      toast.success('Tải ảnh banner lên thành công!');
+    } catch (err) {
+      toast.error(err.message || 'Lỗi khi upload banner');
+      console.error(err);
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const handlePosterUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh (jpg, png, webp…).');
+      return;
+    }
+
+    setUploadingPoster(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'phimhay24h');
+      formData.append('folder', 'posters');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/lhow11kv/image/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error('Upload poster thất bại');
+      }
+
+      const data = await res.json();
+      handleChange('posterUrl', data.secure_url);
+      toast.success('Tải ảnh poster lên thành công!');
+    } catch (err) {
+      toast.error(err.message || 'Lỗi khi upload poster');
+      console.error(err);
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
 
   useEffect(() => {
     if (movie) {
@@ -212,13 +286,32 @@ export const MovieFormModal = ({ movie, onClose, onSaved }) => {
             {/* Poster URL + Preview */}
             <div className="admin-form-group">
               <label className="admin-form-label">Poster URL</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  className="admin-form-input"
+                  value={form.posterUrl}
+                  onChange={(e) => handleChange('posterUrl', e.target.value)}
+                  placeholder="https://example.com/poster.jpg"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  style={{ whiteSpace: 'nowrap', padding: '0 12px', fontSize: '13px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={() => document.getElementById('admin-poster-upload-input').click()}
+                  disabled={uploadingPoster}
+                >
+                  {uploadingPoster ? 'Tải...' : 'Tải lên ☁️'}
+                </button>
+              </div>
               <input
-                className="admin-form-input"
-                value={form.posterUrl}
-                onChange={(e) => handleChange('posterUrl', e.target.value)}
-                placeholder="https://example.com/poster.jpg"
+                id="admin-poster-upload-input"
+                type="file"
+                accept="image/*"
+                onChange={handlePosterUpload}
+                style={{ display: 'none' }}
               />
-              <div className="admin-image-preview">
+              <div className="admin-image-preview" style={{ marginTop: '8px' }}>
                 {form.posterUrl ? (
                   <img src={form.posterUrl} alt="Poster preview" onError={(e) => { e.target.style.display = 'none'; }} />
                 ) : (
@@ -230,13 +323,32 @@ export const MovieFormModal = ({ movie, onClose, onSaved }) => {
             {/* Banner URL + Preview */}
             <div className="admin-form-group">
               <label className="admin-form-label">Banner URL</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  className="admin-form-input"
+                  value={form.bannerUrl}
+                  onChange={(e) => handleChange('bannerUrl', e.target.value)}
+                  placeholder="https://example.com/banner.jpg"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="admin-btn-secondary"
+                  style={{ whiteSpace: 'nowrap', padding: '0 12px', fontSize: '13px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={() => document.getElementById('admin-banner-upload-input').click()}
+                  disabled={uploadingBanner}
+                >
+                  {uploadingBanner ? 'Tải...' : 'Tải lên ☁️'}
+                </button>
+              </div>
               <input
-                className="admin-form-input"
-                value={form.bannerUrl}
-                onChange={(e) => handleChange('bannerUrl', e.target.value)}
-                placeholder="https://example.com/banner.jpg"
+                id="admin-banner-upload-input"
+                type="file"
+                accept="image/*"
+                onChange={handleBannerUpload}
+                style={{ display: 'none' }}
               />
-              <div className="admin-image-preview">
+              <div className="admin-image-preview" style={{ marginTop: '8px' }}>
                 {form.bannerUrl ? (
                   <img src={form.bannerUrl} alt="Banner preview" onError={(e) => { e.target.style.display = 'none'; }} />
                 ) : (

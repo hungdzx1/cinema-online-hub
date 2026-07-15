@@ -105,6 +105,8 @@ export const MovieDetailPage = () => {
         <section className="video-player-section">
           <div className="container">
             <VideoPlayer
+              movieId={movie.id}
+              episodeId={activeEpisode?.id}
               movieSlug={movie.slug}
               embedUrl={activeEpisode?.embedUrl}
               currentEpisodeNumber={activeEpisodeNumber}
