@@ -33,6 +33,7 @@ export class WatchlistService {
   async findByUser(userId: number): Promise<Watchlist[]> {
     return this.watchlistRepository.find({
       where: { userId },
+      relations: { movie: true },
       order: { createdAt: 'DESC' },
     });
   }

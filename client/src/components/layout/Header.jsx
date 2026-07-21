@@ -5,6 +5,7 @@ import { Button } from '../common/Button';
 import { HistoryIcon, BookmarkIcon, LoginIcon, HomeIcon, GridIcon, FilmIcon, StarIcon, FlameIcon } from '../common/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useWatchlist } from '../../context/WatchlistContext';
 import './layout.css';
 
 /* ---- Avatar fallback helper ---- */
@@ -35,6 +36,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { user, logout, isLoggedIn } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { watchlist } = useWatchlist();
   const dropdownRef = useRef(null);
 
   const handleSearch = (value) => {
@@ -90,9 +92,9 @@ export const Header = () => {
             <Button 
               variant="dark" 
               icon={<BookmarkIcon size={18} />}
-              onClick={() => navigate(isLoggedIn ? '/watchlist' : '/login')}
+              onClick={() => navigate('/watchlist')}
             >
-              Theo dõi
+              Theo dõi {watchlist.length > 0 ? `(${watchlist.length})` : ''}
             </Button>
 
             {/* Theme Toggle */}
