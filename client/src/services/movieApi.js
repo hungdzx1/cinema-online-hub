@@ -20,8 +20,15 @@ export const movieApi = {
   // Lọc và tìm kiếm phim
   filterMovies: async (params = {}) => {
     try {
-      const queryString = new URLSearchParams(params).toString();
-      const url = queryString ? `/movies/filter?${queryString}` : '/movies/filter';
+      const query = new URLSearchParams();
+      for (const key in params) {
+        if (Array.isArray(params[key])) {
+          params[key].forEach(val => query.append(key, val));
+        } else if (params[key] !== null && params[key] !== undefined) {
+          query.append(key, params[key]);
+        }
+      }
+      const url = query.toString() ? `/movies/filter?${query.toString()}` : '/movies/filter';
       return await fetchApi(url);
     } catch (error) {
       console.error('Failed to filter movies', error);
@@ -32,6 +39,7 @@ export const movieApi = {
   // Chi tiết trang xem phim công khai (gồm phim, tập phim, phim liên quan)
   getDetailBySlug: async (slug) => {
     try {
+      // Lưu ý: Nếu backend route của bạn là /movies/slug/:slug thì đổi URL bên dưới thành `/movies/slug/${slug}`
       return await fetchApi(`/movies/detail/${slug}`);
     } catch (error) {
       console.error(`Failed to get movie detail for ${slug}`, error);
@@ -48,6 +56,35 @@ export const movieApi = {
       });
     } catch (error) {
       console.error('Failed to increment view count', error);
+    }
+  },
+
+  // ✅ THÊM: Random nhanh 1 phim
+  getRandom: async () => {
+    try {
+      return await fetchApi('/movies/random');
+    } catch (error) {
+      console.error('Failed to get random movie', error);
+      throw error;
+    }
+  },
+
+  // ✅ THÊM: Random nâng cao theo bộ lọc
+  getRandomAdvanced: async (params = {}) => {
+    try {
+      const query = new URLSearchParams();
+      for (const key in params) {
+        if (Array.isArray(params[key])) {
+          params[key].forEach(val => query.append(key, val));
+        } else if (params[key] !== null && params[key] !== undefined) {
+          query.append(key, params[key]);
+        }
+      }
+      const url = query.toString() ? `/movies/random/advanced?${query.toString()}` : '/movies/random/advanced';
+      return await fetchApi(url);
+    } catch (error) {
+      console.error('Failed to get advanced random movies', error);
+      throw error;
     }
   },
 
@@ -72,4 +109,3 @@ export const movieApi = {
   delete: (id) =>
     fetchApi(`/movies/${id}`, { method: 'DELETE', ...getAuthHeaders() }),
 };
-

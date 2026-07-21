@@ -13,6 +13,7 @@ import { UsersPage } from './pages/admin/UsersPage';
 import { AdminRoute } from './components/admin/AdminRoute';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AuthProvider } from './context/AuthContext';
+import { RandomPage } from './pages/RandomPage';
 import { WatchlistProvider } from './context/WatchlistContext';
 import './index.css';
 
@@ -32,6 +33,7 @@ function App() {
             <Route path="/movie/:slug/watch" element={<MovieDetailPage />} />
             <Route path="/profile"  element={<ProfilePage />} />
             <Route path="/watchlist" element={<WatchlistPage />} />
+            <Route path="/random" element={<RandomPage />} />
 
             {/* Admin routes - Protected */}
             <Route
