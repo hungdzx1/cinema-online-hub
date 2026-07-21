@@ -75,6 +75,17 @@ export class MoviesController {
     return this.moviesService.filterMovies(filters);
   }
 
+  @Post(':id/view')
+  incrementView(
+    @Param('id') id: string,
+    @Body('episodeId') episodeId?: number,
+    @Request() req?: any,
+  ) {
+    const clientIp =
+      req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '127.0.0.1';
+    return this.moviesService.incrementView(+id, episodeId ? +episodeId : undefined, String(clientIp));
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.moviesService.findOne(+id);

@@ -61,6 +61,18 @@ export const MovieDetailPage = () => {
     }
   };
 
+  // Thuật toán tự động cập nhật lượt xem khi vào chế độ xem phim hoặc đổi tập
+  useEffect(() => {
+    const movieId = data?.movie?.id;
+    if (isWatchMode && movieId) {
+      const timer = setTimeout(() => {
+        movieApi.incrementView(movieId, activeEpisode?.id);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isWatchMode, data?.movie?.id, activeEpisode?.id]);
+
   if (loading) {
     return (
       <MainLayout>
