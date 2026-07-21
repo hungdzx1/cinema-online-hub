@@ -29,7 +29,7 @@
   
   /* Layout */
   --header-height: 70px;
-  --container-max-width: 1200px;
+  --container-max-width: 100%; /* ĐÃ SỬA: 1200px thành 100% */
   
   /* Border Radius */
   --radius-sm: 4px;
@@ -70,11 +70,21 @@ ul {
   list-style: none;
 }
 
-/* Container dùng chung */
+/* Container dùng chung - ĐÃ SỬA */
 .container {
-  max-width: var(--container-max-width);
-  margin: 0 auto;
-  padding: 0 var(--spacing-md);
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0 40px; /* Thêm padding 2 bên thay vì ép max-width */
+  box-sizing: border-box;
+}
+
+/* Đảm bảo #root không bị Vite ép nhỏ */
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* Utility classes */

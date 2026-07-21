@@ -1,133 +1,124 @@
-import { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { TrendingCarousel } from '../components/home/TrendingCarousel';
-import { CategoryFilter } from '../components/home/CategoryFilter';
-import { MovieGrid } from '../components/home/MovieGrid';
 import { movieApi } from '../services/movieApi';
-import { genreApi } from '../services/genreApi';
+import '../components/home/home.css';
+
+// Component Hero Banner (Khung to tự chuyển slide)
+const Hero = ({ movies }) => {
+  const [index, setIndex] = useState(0);
+  const slides = movies.slice(0, 5); // Lấy 5 phim đầu làm slide
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % slides.length);
+    }, 6000); // Chuyển slide mỗi 6 giây
+    return () => clearInterval(id);
+  }, [slides.length]);
+
+  if (slides.length === 0) return null;
+  const movie = slides[index];
+
+  const backdropUrl = movie.bannerUrl || movie.posterUrl;
+  const typeText = movie.type === 'phim_bo' ? 'Phim Bộ' : movie.type === 'phim_le' ? 'Phim Lẻ' : 'Phim';
+
+  return (
+    <div className="hero-banner-wrapper" style={{ backgroundImage: `url(${backdropUrl})` }}>
+      <div className="hero-overlay"></div>
+      <div className="hero-content" style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 40px' }}>
+        <span className="hero-tag">🔥 TOP THỊNH HÀNH</span>
+        <h1 className="hero-title">{movie.title}</h1>
+        <div className="hero-meta">
+          {movie.avgRating > 0 && (
+            <span className="meta-tag warning-tag">★ {Number(movie.avgRating).toFixed(1)}</span>
+          )}
+          {movie.releaseYear && <span className="meta-tag">{movie.releaseYear}</span>}
+          <span className="meta-tag primary-tag">{typeText}</span>
+        </div>
+        {movie.description && (
+          <p className="hero-description">{movie.description}</p>
+        )}
+        <div className="hero-actions">
+          <Link to={`/movie/${movie.slug}/watch?episode=1`} className="hero-btn-play">
+            ▶ Xem Ngay
+          </Link>
+          <Link to={`/movie/${movie.slug}`} className="hero-btn-secondary">
+            Chi tiết
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const HomePage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = parseInt(searchParams.get('page')) || 1;
-  const categoryParam = searchParams.get('category') || null;
+  const [allMovies, setAllMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [genres, setGenres] = useState([]);
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [loadingTrending, setLoadingTrending] = useState(true);
-
-  const [filteredMovies, setFilteredMovies] = useState([]);
-  const [loadingFiltered, setLoadingFiltered] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
-  
-  const gridRef = useRef(null);
-
-  // Fetch initial data: Genres and Trending Movies
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchAllData = async () => {
       try {
-        setLoadingTrending(true);
-        const topMoviesData = await movieApi.filterMovies({ sortBy: 'views', limit: 10 });
-        setTrendingMovies(topMoviesData.data || []);
-        
-        const genresData = await genreApi.getAll();
-        setGenres(genresData);
+        setLoading(true);
+        // Lấy 30 phim đầu tiên để chia các dải
+        const response = await movieApi.filterMovies({ limit: 30, sortBy: 'views' });
+        const moviesData = response?.data || [];
+        setAllMovies(moviesData);
       } catch (error) {
-        console.error("Error fetching initial data:", error);
+        console.error("Error fetching home data:", error);
       } finally {
-        setLoadingTrending(false);
+        setLoading(false);
       }
     };
-
-    fetchInitialData();
+    fetchAllData();
   }, []);
 
-  // Update URL when category changes
-  const handleSelectCategory = (genre) => {
-    if (genre) {
-      setSearchParams({ category: genre.slug, page: 1 });
-    } else {
-      setSearchParams({ page: 1 });
-    }
-  };
+  // Hàm lọc phim theo slug thể loại
+  const filterByGenre = (slug) => allMovies.filter(m => 
+    m.genres?.some(g => g.slug === slug)
+  );
 
-  // Update URL when page changes
-  const handlePageChange = (newPage) => {
-    const newParams = { page: newPage };
-    if (categoryParam) newParams.category = categoryParam;
-    setSearchParams(newParams);
-    
-    // Cuộn lên đầu danh sách phim
-    if (gridRef.current) {
-      gridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  // Chia các mảng phim cho các dải
+  const heroMovies = allMovies.slice(0, 5); // Dành cho Hero Banner
+  const trendingMovies = allMovies.slice(0, 10); // Dải thịnh hành có hiện số 1,2,3
+  const actionMovies = filterByGenre('hanh-dong').slice(0, 10);
+  const romanceMovies = filterByGenre('tinh-cam').slice(0, 10);
+  const comedyMovies = filterByGenre('hai-huoc').slice(0, 10);
+  const animeMovies = filterByGenre('hoat-hinh').slice(0, 10);
+  
+  // Dải phim thanh xuân
+  const youthMovies = filterByGenre('hoc-duong').length > 0 
+    ? filterByGenre('hoc-duong').slice(0, 10) 
+    : allMovies.slice(10, 20);
 
-  // Fetch movies when category or page changes
-  useEffect(() => {
-    // Wait until genres are loaded to map slug to ID, unless no category is selected
-    if (categoryParam && genres.length === 0) return;
-
-    const fetchMoviesByCategory = async () => {
-      try {
-        setLoadingFiltered(true);
-        let activeGenreId = null;
-
-        if (categoryParam) {
-          const found = genres.find(g => g.slug === categoryParam);
-          if (found) activeGenreId = found.id;
-        }
-
-        const params = {
-          limit: 15,
-          page: pageParam,
-          ...(activeGenreId ? { genreIds: [activeGenreId] } : {})
-        };
-        
-        const data = await movieApi.filterMovies(params);
-        setFilteredMovies(data.data || []);
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching filtered movies:", error);
-      } finally {
-        setLoadingFiltered(false);
-      }
-    };
-
-    fetchMoviesByCategory();
-  }, [categoryParam, pageParam, genres]);
+  if (loading) {
+    return (
+      <MainLayout>
+        <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+          Đang tải dữ liệu phim...
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      {/* Khối Trending - Thịnh Hành (Carousel) */}
-      {loadingTrending ? (
-        <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text-secondary)' }}>
-          Đang tải dữ liệu phim thịnh hành...
-        </div>
-      ) : (
-        <TrendingCarousel movies={trendingMovies} />
-      )}
+      {/* ===== 1. HERO BANNER TO (Tự chuyển slide) ===== */}
+      <Hero movies={heroMovies} />
 
-      {/* Bộ lọc thể loại phim */}
-      <CategoryFilter 
-        genres={genres} 
-        activeCategorySlug={categoryParam} 
-        onSelectCategory={handleSelectCategory} 
-      />
-
-      {/* Lưới phim theo thể loại */}
-      <div ref={gridRef}>
-        <MovieGrid 
-          movies={filteredMovies} 
-          loading={loadingFiltered} 
-          currentPage={pageParam}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+      {/* ===== 2. CÁC DẢI PHIM (Full width, có nút mũi tên) ===== */}
+      <div style={{ paddingTop: '20px' }}>
+        {/* Dải Thịnh Hành có hiện số thứ tự (showRank=true) */}
+        <TrendingCarousel title="🔥 ĐANG THỊNH HÀNH" movies={trendingMovies} showRank={true} />
+        
+        {/* Các dải chủ đề không hiện số thứ tự */}
+        <TrendingCarousel title="💥 Phim Hành Động Nóng Bỏng" movies={actionMovies} />
+        <TrendingCarousel title="💖 Phim Chữa Lành Tâm Hồn" movies={romanceMovies} />
+        <TrendingCarousel title="😂 Phim Hài Hước Giải Trí" movies={comedyMovies} />
+        <TrendingCarousel title="🌸 Phim Hoạt Hình & Anime" movies={animeMovies} />
+        <TrendingCarousel title="🎓 Phim Thanh Xuân Vườn Trường" movies={youthMovies} />
       </div>
     </MainLayout>
   );
 };
-
-
-
