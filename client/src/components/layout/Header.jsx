@@ -5,6 +5,7 @@ import { Button } from '../common/Button';
 import { HistoryIcon, BookmarkIcon, LoginIcon, HomeIcon, GridIcon, FilmIcon, StarIcon, FlameIcon } from '../common/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { genreApi } from '../../services/genreApi';
 import './layout.css';
 
 /* ---- Avatar fallback helper ---- */
@@ -32,10 +33,49 @@ const UserAvatar = ({ user }) => {
 export const Header = () => {
   const [searchValue, setSearchValue] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false); // ✅ THÊM STATE NÀY
   const navigate = useNavigate();
   const { user, logout, isLoggedIn } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const dropdownRef = useRef(null);
+
+  // State cho menu thể loại / quốc gia
+  const [genres, setGenres] = useState([]);
+  const [activeMenu, setActiveMenu] = useState(null); 
+  const mockCountries = [
+    { id: 1, name: 'Việt Nam', slug: 'viet-nam' },
+    { id: 2, name: 'Hàn Quốc', slug: 'han-quoc' },
+    { id: 3, name: 'Trung Quốc', slug: 'trung-quoc' },
+    { id: 4, name: 'Nhật Bản', slug: 'nhat-ban' },
+    { id: 5, name: 'Thái Lan', slug: 'thai-lan' },
+    { id: 6, name: 'Âu Mỹ', slug: 'au-my' },
+    { id: 7, name: 'Hồng Kông', slug: 'hong-kong' },
+    { id: 8, name: 'Đài Loan', slug: 'dai-loan' },
+    { id: 9, name: 'Ấn Độ', slug: 'an-do' },
+    { id: 10, name: 'Anh', slug: 'anh' },
+  ];
+
+  // Gọi API lấy danh sách thể loại
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const data = await genreApi.getAll();
+        setGenres(Array.isArray(data) ? data : []);
+      } catch (e) { 
+        console.error("Lỗi tải thể loại", e); 
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  // ✅ THÊM EFFECT BẮT SỰ KIỆN CUỘN CHUỘT
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSearch = (value) => {
     if (value.trim()) {
@@ -61,7 +101,8 @@ export const Header = () => {
   };
 
   return (
-    <header className="header-wrapper">
+    // ✅ THÊM CLASS SCROLLED VÀO ĐÂY
+    <header className={`header-wrapper ${scrolled ? 'scrolled' : ''}`}>
       {/* Top Bar */}
       <div className="header-top">
         <div className="container header-top-inner">
@@ -142,7 +183,6 @@ export const Header = () => {
 
                 {dropdownOpen && (
                   <div className="user-dropdown" role="menu">
-                    {/* User info header */}
                     <div className="user-dropdown-header">
                       <UserAvatar user={user} />
                       <div className="user-dropdown-info">
@@ -218,33 +258,61 @@ export const Header = () => {
         </div>
       )}
 
-      {/* Navigation Menu */}
+      {/* ===== Navigation Menu ===== */}
       <div className="main-nav">
         <div className="container">
           <ul className="nav-list">
             <li className="nav-item active">
               <Link to="/"><HomeIcon size={18} /> Trang chủ</Link>
             </li>
-            {/* <li className="nav-item">
-              <a href="#"><GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span></a>
+            
+            {/* Menu Thể Loại (Hover xổ xuống) */}
+            <li className="nav-item has-mega-menu" 
+                onMouseEnter={() => setActiveMenu('genres')} 
+                onMouseLeave={() => setActiveMenu(null)}>
+              <Link to="/search"><GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span></Link>
+              {activeMenu === 'genres' && (
+                <div className="mega-menu-box">
+                  {genres.map(g => (
+                    <Link key={g.id} to={`/search?genreIds=${g.id}`} className="mega-menu-item">{g.name}</Link>
+                  ))}
+                </div>
+              )}
+            </li>
+
+            {/* Menu Quốc Gia (Hover xổ xuống) */}
+            <li className="nav-item has-mega-menu"
+                onMouseEnter={() => setActiveMenu('countries')}
+                onMouseLeave={() => setActiveMenu(null)}>
+              <Link to="/search"><FilmIcon size={18} /> Quốc Gia <span className="arrow-down">▾</span></Link>
+              {activeMenu === 'countries' && (
+                <div className="mega-menu-box">
+                  {mockCountries.map(c => (
+                    <Link key={c.id} to={`/search?country=${c.slug}`} className="mega-menu-item">{c.name}</Link>
+                  ))}
+                </div>
+              )}
+            </li>
+
+            <li className="nav-item">
+              <Link to="/search?type=phim_le"><FilmIcon size={18} /> Phim Lẻ</Link>
             </li>
             <li className="nav-item">
-              <a href="#"><FilmIcon size={18} /> Phim Lẻ</a>
-            </li> */}
-            <li className="nav-item">
-              <a href="#"><FlameIcon size={18} /> Đang Chiếu</a>
+              <Link to="/search?type=phim_bo"><FlameIcon size={18} /> Phim Bộ</Link>
             </li>
-            {/* <li className="nav-item">
-              <a href="#"><HistoryIcon size={18} /> Lịch Chiếu</a>
-            </li> */}
             <li className="nav-item">
-              <a href="#"><BookmarkIcon size={18} /> Hoàn Thành</a>
+              <Link to="/random" style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
+                <StarIcon size={18} /> Random Phim
+              </Link>
             </li>
-            {/* <li className="nav-item">
-              <a href="#"><StarIcon size={18} /> Top 10 HH3D</a>
-            </li> */}
             <li className="nav-item">
-              <a href="#"><StarIcon size={18} /> Đánh Giá Cao</a>
+              <Link to="/search?status=ongoing"><FlameIcon size={18} /> Đang Chiếu</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/search?status=completed"><BookmarkIcon size={18} /> Hoàn Thành</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/search?sortBy=rating"><StarIcon size={18} /> Đánh Giá Cao</Link>
             </li>
           </ul>
         </div>

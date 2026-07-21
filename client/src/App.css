@@ -1,10 +1,9 @@
 /* Zenith Dashboard - App specific styling */
 
 .app-container {
-  display: grid;
-  grid-template-columns: 280px 1fr;
+  display: block; 
   min-height: 100vh;
-  background-color: var(--bg-app);
+  background-color: var(--bg-main);
 }
 
 /* Sidebar Styles */
@@ -132,9 +131,8 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  max-width: 1600px;
-  width: 100%;
-  margin: 0 auto;
+  width: 100%; /* ĐÃ SỬA: Bỏ max-width: 1600px và margin: 0 auto để full màn hình */
+  margin: 0;
   overflow-y: auto;
 }
 
