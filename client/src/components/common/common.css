@@ -441,3 +441,98 @@
   color: var(--text-muted);
   font-size: 14px;
 }
+/* ===== QUICK VIEW (HOVER CARD) ===== */
+.movie-card {
+  position: relative; /* Quan trọng để làm mốc cho popup */
+}
+
+.movie-quick-view {
+  position: absolute;
+  top: 100%; /* Hiện ngay dưới thẻ phim */
+  left: 50%;
+  transform: translateX(-50%) translateY(10px); /* Căn giữa và hạ xuống chút xíu */
+  width: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+  z-index: 100; /* Đảm bảo nổi lên trên các phim khác */
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  
+  /* Trạng thái ẩn mặc định */
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none; /* Tránh nhấp nháy khi rê chuột qua khoảng trống */
+}
+
+/* Khi rê chuột vào movie-card, quick-view sẽ hiện ra */
+.movie-card:hover .movie-quick-view {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0); /* Trượt lên nhẹ */
+  pointer-events: auto;
+  transition-delay: 0.3s; /* Độ trễ 0.3s để tránh hiện liên tục khi vô tình lướt chuột qua */
+}
+
+/* Chữ within Quick View */
+.qv-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qv-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.qv-badge {
+  background: var(--color-warning);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.qv-dot {
+  opacity: 0.5;
+}
+
+.qv-genres {
+  font-size: 13px;
+  color: var(--color-primary);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.qv-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Giới hạn 3 dòng mô tả */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.qv-btn {
+  text-align: center;
+  background: var(--bg-button);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
