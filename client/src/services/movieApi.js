@@ -39,18 +39,6 @@ export const movieApi = {
     }
   },
 
-  // Thuật toán cập nhật lượt xem phim & tập phim
-  incrementView: async (movieId, episodeId) => {
-    try {
-      return await fetchApi(`/movies/${movieId}/view`, {
-        method: 'POST',
-        data: { episodeId },
-      });
-    } catch (error) {
-      console.error('Failed to increment view count', error);
-    }
-  },
-
   // === Admin ===
   // Get all movies (including hidden ones)
   getAllAdmin: () =>

@@ -95,36 +95,6 @@ export const MoviesPage = () => {
     fetchMovies();
   };
 
-  const handleToggleVisible = async (movie) => {
-    try {
-      const nextVal = !movie.isVisible;
-      setMovies((prev) =>
-        prev.map((m) => (m.id === movie.id ? { ...m, isVisible: nextVal } : m))
-      );
-      await movieApi.update(movie.id, { isVisible: nextVal });
-      toast.success(`Đã ${nextVal ? 'hiện' : 'ẩn'} phim "${movie.title}"`);
-    } catch (err) {
-      console.error(err);
-      toast.error('Cập nhật trạng thái hiển thị thất bại');
-      fetchMovies();
-    }
-  };
-
-  const handleToggleFeatured = async (movie) => {
-    try {
-      const nextVal = !movie.isFeatured;
-      setMovies((prev) =>
-        prev.map((m) => (m.id === movie.id ? { ...m, isFeatured: nextVal } : m))
-      );
-      await movieApi.update(movie.id, { isFeatured: nextVal });
-      toast.success(`Đã ${nextVal ? 'bật' : 'tắt'} nổi bật cho "${movie.title}"`);
-    } catch (err) {
-      console.error(err);
-      toast.error('Cập nhật trạng thái nổi bật thất bại');
-      fetchMovies();
-    }
-  };
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -216,22 +186,14 @@ export const MoviesPage = () => {
                     <td>{(movie.viewCount || 0).toLocaleString()}</td>
                     <td>{movie.avgRating ? Number(movie.avgRating).toFixed(1) : '0.0'}</td>
                     <td>
-                      <div
-                        className={`admin-toggle ${movie.isVisible ? 'active' : ''}`}
-                        title={movie.isVisible ? 'Bật: Phim đang hiện (Click để ẩn)' : 'Tắt: Phim đang ẩn (Click để hiện)'}
-                        onClick={() => handleToggleVisible(movie)}
-                      />
+                      <div className={`admin-toggle ${movie.isVisible ? 'active' : ''}`} title={movie.isVisible ? 'Đang hiện' : 'Đang ẩn'} />
                     </td>
                     <td>
-                      <div
-                        className={`admin-toggle ${movie.isFeatured ? 'active' : ''}`}
-                        title={movie.isFeatured ? 'Bật: Phim nổi bật (Click để tắt)' : 'Tắt: Phim thường (Click để bật nổi bật)'}
-                        onClick={() => handleToggleFeatured(movie)}
-                      />
+                      <div className={`admin-toggle ${movie.isFeatured ? 'active' : ''}`} title={movie.isFeatured ? 'Nổi bật' : 'Bình thường'} />
                     </td>
                     <td>
                       <div className="admin-action-btns">
-                        <button className="admin-action-btn btn-view" title="Xem phim" onClick={() => window.open(`/movie/${movie.slug}`, '_blank')}>
+                        <button className="admin-action-btn btn-view" title="Xem" onClick={() => window.open(`/phim/${movie.slug}`, '_blank')}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                         <button className="admin-action-btn btn-edit" title="Sửa" onClick={() => openEdit(movie)}>

@@ -3,148 +3,130 @@ import { Link } from 'react-router-dom';
 import './layout.css';
 
 export const Footer = () => {
-  const [activeModal, setActiveModal] = useState(null); // 'contact' | 'copyright' | 'terms' | 'privacy'
-  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
-  const [sentSuccess, setSentSuccess] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
-  const handleOpenModal = (e, modalType) => {
-    e.preventDefault();
-    setActiveModal(modalType);
-    setSentSuccess(false);
-  };
-
-  const handleCloseModal = () => {
-    setActiveModal(null);
-    setSentSuccess(false);
-  };
-
-  const handleContactSubmit = (e) => {
-    e.preventDefault();
-    setSentSuccess(true);
-    setTimeout(() => {
-      setContactForm({ name: '', email: '', message: '' });
-    }, 1500);
-  };
+  const closeModal = () => setModalType(null);
 
   return (
     <footer className="footer-wrapper">
       <div className="container footer-inner">
+        {/* Cột 1: Thông tin thương hiệu & Liên hệ */}
         <div className="footer-col">
-          <h2 className="logo-text">Phim Hay <span className="text-gradient">24h</span></h2>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <h2 className="logo-text">Phim Hay <span className="text-gradient">24h</span></h2>
+          </Link>
           <p className="footer-desc">
-            Website xem phim chất lượng cao. Cập nhật liên tục các bộ phim mới nhất.
+            Website xem phim chất lượng cao. Cập nhật liên tục các bộ phim mới nhất, phim chiếu rạp, phim bộ và phim hoạt hình hấp dẫn.
           </p>
-          <div className="footer-contact-info">
-            📧 Liên hệ Admin: <a href="mailto:admin@phimplay24.com">admin@phimplay24.com</a>
+
+          <div className="footer-contact-box">
+            <span className="footer-contact-label">✉ Liên hệ & Quảng cáo:</span>
+            <a href="mailto:admin@phimplay24.com" className="footer-email-link">
+              admin@phimplay24.com
+            </a>
           </div>
         </div>
 
+        {/* Cột 2: Danh mục phim */}
         <div className="footer-col">
           <h3>Thể loại</h3>
           <ul>
             <li><Link to="/search?type=phim_le">Phim Lẻ</Link></li>
             <li><Link to="/search?type=phim_bo">Phim Bộ</Link></li>
             <li><Link to="/search?type=hoat_hinh">Hoạt Hình</Link></li>
-            <li><Link to="/search?status=ongoing">Đang Chiếu</Link></li>
+            <li><Link to="/search?status=ongoing">Phim Đang Chiếu</Link></li>
           </ul>
         </div>
 
+        {/* Cột 3: Hỗ trợ & Điều khoản */}
         <div className="footer-col">
           <h3>Hỗ trợ</h3>
           <ul>
-            <li><a href="#contact" onClick={(e) => handleOpenModal(e, 'contact')}>Liên hệ</a></li>
-            <li><a href="#copyright" onClick={(e) => handleOpenModal(e, 'copyright')}>Bản quyền</a></li>
-            <li><a href="#terms" onClick={(e) => handleOpenModal(e, 'terms')}>Điều khoản sử dụng</a></li>
-            <li><a href="#privacy" onClick={(e) => handleOpenModal(e, 'privacy')}>Chính sách bảo mật</a></li>
+            <li><button type="button" onClick={() => setModalType('contact')}>Liên hệ</button></li>
+            <li><button type="button" onClick={() => setModalType('dmca')}>Bản quyền</button></li>
+            <li><button type="button" onClick={() => setModalType('terms')}>Điều khoản sử dụng</button></li>
+            <li><button type="button" onClick={() => setModalType('privacy')}>Chính sách bảo mật</button></li>
           </ul>
         </div>
       </div>
 
       <div className="footer-bottom">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} Phim Hay 24h. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Phim Hay 24h. Tất cả quyền được bảo lưu. Email liên hệ:{' '}
+            <a href="mailto:admin@phimplay24.com" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+              admin@phimplay24.com
+            </a>
+          </p>
         </div>
       </div>
 
-      {/* Modal Popup */}
-      {activeModal && (
-        <div className="footer-modal-overlay" onClick={handleCloseModal}>
-          <div className="footer-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button className="footer-modal-close" onClick={handleCloseModal} aria-label="Đóng">✕</button>
+      {/* Info Modals */}
+      {modalType && (
+        <div className="footer-modal-overlay" onClick={closeModal}>
+          <div className="footer-modal-card fade-in" onClick={(e) => e.stopPropagation()}>
+            <button className="footer-modal-close" onClick={closeModal} aria-label="Đóng">
+              ✕
+            </button>
 
-            {activeModal === 'contact' && (
-              <div className="footer-modal-content">
-                <h2>📬 Liên hệ Ban Quản Trị</h2>
-                <p>Nếu bạn có góp ý, thắc mắc hoặc cần hỗ trợ về phim, vui lòng gửi tin nhắn cho chúng tôi hoặc liên hệ trực tiếp qua Email:</p>
-                <div className="contact-email-box">
-                  ✉️ <strong>admin@phimplay24.com</strong>
-                </div>
-
-                {sentSuccess ? (
-                  <div className="sent-success-message">
-                    🎉 Cảm ơn bạn đã gửi phản hồi! Ban quản trị đã tiếp nhận và sẽ phản hồi tới bạn qua email sớm nhất.
+            {modalType === 'contact' && (
+              <div>
+                <h3 className="footer-modal-title">📬 Thông tin Liên hệ & Hỗ trợ</h3>
+                <div className="footer-modal-body">
+                  <p>Mọi thắc mắc, đóng góp ý kiến, báo lỗi phim hoặc nhu cầu hợp tác quảng cáo xin vui lòng liên hệ Ban quản trị website Phim Hay 24h:</p>
+                  <div className="footer-modal-info-card">
+                    <p><strong>📧 Email chính thức:</strong> <a href="mailto:admin@phimplay24.com">admin@phimplay24.com</a></p>
+                    <p><strong>⏰ Thời gian làm việc:</strong> 24/7 (Phản hồi trong vòng 1-12h)</p>
+                    <p><strong>💬 Hỗ trợ nhanh:</strong> Phản hồi sự cố phát video, khôi phục tài khoản và tiếp nhận yêu cầu phim mới.</p>
                   </div>
-                ) : (
-                  <form onSubmit={handleContactSubmit} className="footer-contact-form">
-                    <input
-                      type="text"
-                      placeholder="Họ và tên của bạn..."
-                      required
-                      value={contactForm.name}
-                      onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email liên hệ của bạn..."
-                      required
-                      value={contactForm.email}
-                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    />
-                    <textarea
-                      placeholder="Nội dung cần gửi / Báo lỗi phim..."
-                      rows={4}
-                      required
-                      value={contactForm.message}
-                      onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    />
-                    <button type="submit" className="footer-submit-btn">Gửi tin nhắn</button>
-                  </form>
-                )}
-              </div>
-            )}
-
-            {activeModal === 'copyright' && (
-              <div className="footer-modal-content">
-                <h2>📜 Chính sách Bản quyền (DMCA)</h2>
-                <p>Tất cả nội dung hình ảnh và video trên website Phim Hay 24h được tổng hợp từ các nguồn chia sẻ công khai trên Internet.</p>
-                <p>Chúng tôi luôn tôn trọng quyền sở hữu trí tuệ của các nhà sáng tạo. Nếu bạn là chủ sở hữu bản quyền của bất kỳ nội dung nào và không muốn hiển thị trên trang web, vui lòng gửi yêu cầu gỡ bỏ tới Email:</p>
-                <div className="contact-email-box">
-                  ✉️ <strong>admin@phimplay24.com</strong>
+                  <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <a href="mailto:admin@phimplay24.com" className="footer-modal-btn">
+                      ✉ Gửi Email ngay
+                    </a>
+                  </div>
                 </div>
-                <p>Ban quản trị sẽ tiến hành kiểm tra và gỡ bỏ nội dung theo yêu cầu trong vòng 24 - 48 giờ làm việc.</p>
               </div>
             )}
 
-            {activeModal === 'terms' && (
-              <div className="footer-modal-content">
-                <h2>📋 Điều khoản Sử dụng</h2>
-                <ol className="terms-list">
-                  <li><strong>Tài khoản người dùng:</strong> Thành viên chịu trách nhiệm bảo mật thông tin tài khoản cá nhân của mình.</li>
-                  <li><strong>Quy tắc bình luận:</strong> Không đăng tải văn hóa phẩm đồi trụy, nội dung kích động, xúc phạm hoặc vi phạm pháp luật.</li>
-                  <li><strong>Phạm vi sử dụng:</strong> Trang web phục vụ cho nhu cầu theo dõi và giải trí cá nhân hoàn toàn phi thương mại.</li>
-                </ol>
+            {modalType === 'dmca' && (
+              <div>
+                <h3 className="footer-modal-title">⚖️ Quy định Bản quyền & DMCA</h3>
+                <div className="footer-modal-body">
+                  <p>Phim Hay 24h tôn trọng quyền sở hữu trí tuệ của các tác giả và các bên giữ bản quyền.</p>
+                  <ul>
+                    <li>Website không lưu trữ trực tiếp bất kỳ tệp video phim nào trên máy chủ. Tất cả video đều được nhúng từ các trang chia sẻ miễn phí công khai trên Internet.</li>
+                    <li>Chúng tôi không chịu trách nhiệm pháp lý về tính chính xác hay bản quyền của các tệp do bên thứ ba lưu trữ.</li>
+                    <li>Nếu bạn là chủ sở hữu bản quyền hợp pháp và yêu cầu gỡ bỏ nội dung, xin vui lòng gửi email về: <strong>admin@phimplay24.com</strong> kèm bằng chứng sở hữu. Nội dung vi phạm sẽ được gỡ bỏ khỏi website trong 24-48h.</li>
+                  </ul>
+                </div>
               </div>
             )}
 
-            {activeModal === 'privacy' && (
-              <div className="footer-modal-content">
-                <h2>🔒 Chính sách Bảo mật</h2>
-                <p>Phim Hay 24h cam kết bảo vệ thông tin riêng tư của người dùng:</p>
-                <ul>
-                  <li>Thông tin cá nhân (Email, Tên người dùng) chỉ dùng để cung cấp trải nghiệm theo dõi phim và lịch sử xem phim.</li>
-                  <li>Không bao giờ chia sẻ hay thương mại hóa thông tin thành viên cho bất kỳ bên thứ ba nào.</li>
-                  <li>Mọi thông tin mật khẩu đều được mã hóa bảo mật chuẩn trên hệ thống.</li>
-                </ul>
+            {modalType === 'terms' && (
+              <div>
+                <h3 className="footer-modal-title">📜 Điều khoản sử dụng dịch vụ</h3>
+                <div className="footer-modal-body">
+                  <p>Khi sử dụng dịch vụ tại Phim Hay 24h, người dùng đồng ý tuân thủ các quy định sau:</p>
+                  <ul>
+                    <li>Dịch vụ xem phim hoàn toàn miễn phí cho người dùng cuối.</li>
+                    <li>Người dùng không đăng tải các bình luận xúc phạm, vi phạm pháp luật hoặc quảng cáo rác (spam).</li>
+                    <li>Không sử dụng công cụ tự động (bot, script) gây quá tải hạ tầng hệ thống.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {modalType === 'privacy' && (
+              <div>
+                <h3 className="footer-modal-title">🔒 Chính sách bảo mật thông tin</h3>
+                <div className="footer-modal-body">
+                  <p>Chúng tôi cam kết bảo vệ dữ liệu cá nhân của người dùng tuyệt đối:</p>
+                  <ul>
+                    <li>Mật khẩu tài khoản được mã hóa một chiều an toàn (Bcrypt).</li>
+                    <li>Lịch sử xem và danh sách phim theo dõi chỉ sử dụng để cá nhân hóa trải nghiệm xem phim của bạn.</li>
+                    <li>Chúng tôi không cung cấp hay chia sẻ dữ liệu người dùng cho bất kỳ bên thứ ba nào.</li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>
