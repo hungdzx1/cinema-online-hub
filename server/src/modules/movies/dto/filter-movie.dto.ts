@@ -61,9 +61,9 @@ export class FilterMovieDto {
   @IsInt()
   releaseYear?: number;
 
-  // Sắp xếp kết quả — newest (mới nhất) | imdb (điểm cao) | views (xem nhiều)
+  // Sắp xếp kết quả — newest (mới nhất) | rating/imdb (điểm cao) | views (xem nhiều)
   @IsOptional()
-  @IsIn(['newest', 'imdb', 'views'])
+  @IsIn(['newest', 'imdb', 'rating', 'views'])
   sortBy?: string = 'newest';
 
   // Phân trang — trang hiện tại (bắt đầu từ 1)

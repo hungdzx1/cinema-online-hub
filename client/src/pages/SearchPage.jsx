@@ -131,7 +131,7 @@ export const SearchPage = () => {
               >
                 <option value="newest">Mới nhất</option>
                 <option value="views">Lượt xem nhiều nhất</option>
-                <option value="imdb">Đánh giá cao nhất</option>
+                <option value="rating">Đánh giá cao nhất</option>
               </select>
             </div>
 
@@ -210,7 +210,11 @@ export const SearchPage = () => {
                 ) : activeCountry ? (
                   <>Phim quốc gia: <span className="keyword">{activeCountry.name}</span></>
                 ) : typeParam ? (
-                  <>Danh sách phim {typeParam === 'phim_bo' ? 'Bộ' : typeParam === 'phim_le' ? 'Lẻ' : typeParam === 'hoat_hinh' ? 'Hoạt hình' : 'Anime'}</>
+                  <>Danh sách phim <span className="keyword">{typeParam === 'phim_bo' ? 'Bộ' : typeParam === 'phim_le' ? 'Lẻ' : typeParam === 'hoat_hinh' ? 'Hoạt hình' : 'Anime'}</span></>
+                ) : statusParam ? (
+                  <>Phim <span className="keyword">{statusParam === 'ongoing' ? 'Đang chiếu' : 'Hoàn thành'}</span></>
+                ) : sortByParam === 'rating' || sortByParam === 'imdb' ? (
+                  <>Danh sách phim <span className="keyword">Đánh Giá Cao</span></>
                 ) : (
                   'Lọc danh sách phim'
                 )}

@@ -261,6 +261,7 @@ export class MoviesService {
 
     // Sắp xếp kết quả
     switch (sortBy) {
+      case 'rating':
       case 'imdb':
         qb.orderBy('movie.avgRating', 'DESC');
         break;
