@@ -49,53 +49,7 @@ export class MoviesService {
     }
     return movie;
   }
-  // Thuật toán đếm và cập nhật lượt xem với Debounce / Anti-Spam Throttling (60s)
-  private viewCache = new Map<string, number>();
-
-  async incrementView(
-    movieId: number,
-    episodeId?: number,
-    clientIp: string = '127.0.0.1',
-  ): Promise<{ viewCount: number; message: string }> {
-    const cacheKey = `${clientIp}_${movieId}_${episodeId || 0}`;
-    const now = Date.now();
-    const lastViewTime = this.viewCache.get(cacheKey) || 0;
-
-    // Giới hạn chống spam F5: 60 giây giữa các lần đếm view cùng IP / Session
-    if (now - lastViewTime < 60000) {
-      const movie = await this.movieRepository.findOne({ where: { id: movieId } });
-      return {
-        viewCount: movie?.viewCount || 0,
-        message: 'Lượt xem vừa được cập nhật, vui lòng đợi trước khi đếm lại',
-      };
-    }
-
-    // Cập nhật timestamp lượt xem mới nhất
-    this.viewCache.set(cacheKey, now);
-
-    // Dọn dẹp cache cũ quá 10 phút để tối ưu bộ nhớ RAM
-    if (this.viewCache.size > 5000) {
-      for (const [k, v] of this.viewCache.entries()) {
-        if (now - v > 600000) this.viewCache.delete(k);
-      }
-    }
-
-    // 1. Tăng lượt xem cho Phim
-    await this.movieRepository.increment({ id: movieId }, 'viewCount', 1);
-
-    // 2. Tăng lượt xem cho Tập phim tương ứng (nếu phát theo tập)
-    if (episodeId) {
-      await this.episodeRepository.increment({ id: episodeId }, 'viewCount', 1);
-    }
-
-    const updatedMovie = await this.movieRepository.findOne({ where: { id: movieId } });
-    return {
-      viewCount: updatedMovie?.viewCount || 0,
-      message: 'Cập nhật lượt xem thành công',
-    };
-  }
-
-  // Chi tiết phim theo slug (public)
+  // Chi tiết phim theo slug (public) — tăng lượt xem
   async findBySlug(slug: string): Promise<Movie> {
     const movie = await this.movieRepository.findOne({ 
       where: { slug },
@@ -105,6 +59,7 @@ export class MoviesService {
       this.logger.warn(`Không tìm thấy phim slug=${slug}`);
       throw new NotFoundException(`Không tìm thấy phim: ${slug}`);
     }
+    await this.movieRepository.increment({ id: movie.id }, 'viewCount', 1);
     return movie;
   }
 
@@ -118,6 +73,10 @@ export class MoviesService {
       this.logger.warn(`Public detail: Không tìm thấy phim slug=${slug}`);
       throw new NotFoundException(`Không tìm thấy phim: ${slug}`);
     }
+
+    // Tăng lượt xem phim khi xem chi tiết
+    await this.movieRepository.increment({ id: movie.id }, 'viewCount', 1);
+    movie.viewCount += 1;
 
     // Lấy danh sách các tập phim
     const episodes = await this.episodeRepository.find({
