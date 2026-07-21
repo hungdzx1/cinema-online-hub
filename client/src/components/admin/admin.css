@@ -921,15 +921,40 @@
   flex-shrink: 0;
 }
 
+.episode-item-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.episode-item.is-editing {
+  border-color: rgba(255, 71, 87, 0.4);
+  background: var(--bg-card);
+}
+
 /* Episode Form Inline */
 .episode-form-inline {
-  display: grid;
-  grid-template-columns: 80px 1fr 1fr 100px;
-  gap: 10px;
-  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
   background: var(--bg-main);
-  border: 1px solid rgba(255,71,87,0.2);
+  border: 1px solid rgba(255, 71, 87, 0.35);
   border-radius: var(--radius-md);
+  margin-top: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  animation: dropdownIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.episode-form-inputs {
+  display: grid;
+  grid-template-columns: 80px 1fr 2fr 110px;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .episode-form-inputs {
+    grid-template-columns: 1fr;
+  }
 }
 
 .episode-form-inline input {
