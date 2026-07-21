@@ -139,10 +139,23 @@ export const CommentSection = ({ movieId }) => {
     return baseLikes + (isLikedByUser ? 1 : 0);
   };
 
+  // Handle delete comment
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
+    try {
+      await commentApi.delete(commentId);
+      setComments(prev => prev.filter(c => c.id !== commentId && c.parentId !== commentId));
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("Không thể xóa bình luận. Vui lòng thử lại.");
+    }
+  };
+
   const renderCommentItem = (comment, isNested = false) => {
     const isLiked = !!likedComments[comment.id];
     const likesCount = getSimulatedLikeCount(comment.id);
     const hasReplies = replyMap[comment.id] && replyMap[comment.id].length > 0;
+    const isOwner = isLoggedIn && user && (comment.userId === user.id || comment.user?.id === user.id);
 
     return (
       <div key={comment.id} className="comment-block-wrapper">
@@ -181,6 +194,16 @@ export const CommentSection = ({ movieId }) => {
                   }}
                 >
                   💬 Phản hồi
+                </button>
+              )}
+
+              {isOwner && (
+                <button 
+                  className="comment-interaction-btn"
+                  style={{ color: '#ff4757' }}
+                  onClick={() => handleDeleteComment(comment.id)}
+                >
+                  🗑️ Xóa
                 </button>
               )}
             </div>

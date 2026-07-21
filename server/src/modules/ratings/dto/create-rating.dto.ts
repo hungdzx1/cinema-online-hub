@@ -6,12 +6,15 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateRatingDto {
+  @Type(() => Number)
   @IsInt()
   @IsNotEmpty()
   movieId: number;
 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(10)

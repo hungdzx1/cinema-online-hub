@@ -196,6 +196,19 @@
   transform: translateY(-2px);
 }
 
+.hero-btn-following {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+.hero-btn-following:hover {
+  background: linear-gradient(135deg, #ff2e43 0%, #ff526c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+}
+
 /* Body content layout */
 .movie-detail-body {
   padding: 50px 0;
