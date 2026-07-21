@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-// Chú ý: Điền URL của backend vào biến BASE_URL này.
-// Thông thường lấy từ process.env hoặc import.meta.env, ở đây tạm hardcode hoặc để trống.
-export const BASE_URL = 'https://glowing-space-telegram-77pr6p54vvcrw5w-3000.app.github.dev'; // ĐIỀN BASE URL CỦA BẠN VÀO ĐÂY
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Khởi tạo instance của axios với các cài đặt chung
 const apiClient = axios.create({
@@ -12,11 +10,23 @@ const apiClient = axios.create({
   },
 });
 
-// Hàm gọi API cơ bản (vẫn giữ tên cũ để khỏi sửa các file khác)
+// Tự động gắn token Authorization vào mọi request nếu có
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('cinema_access_token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Hàm gọi API cơ bản
 export const fetchApi = async (endpoint, options = {}) => {
   try {
     const response = await apiClient(endpoint, options);
-    // Axios tự động parse JSON và nhét vào response.data
     return response.data;
   } catch (error) {
     console.error('Axios API failed:', error);

@@ -65,8 +65,8 @@ export const RatingModal = ({ isOpen, onClose, movie, onRatingSubmitted }) => {
     try {
       setSubmitting(true);
       await ratingApi.rateMovie({
-        movieId: movie.id,
-        score,
+        movieId: Number(movie.id),
+        score: Number(score),
         content: content.trim() || undefined,
       });
 
@@ -76,7 +76,9 @@ export const RatingModal = ({ isOpen, onClose, movie, onRatingSubmitted }) => {
       onClose();
     } catch (err) {
       console.error("Error submitting rating:", err);
-      alert("Đã xảy ra lỗi khi gửi đánh giá. Vui lòng thử lại sau.");
+      const serverMsg = err.response?.data?.message;
+      const errorText = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      alert(errorText || "Đã xảy ra lỗi khi gửi đánh giá. Vui lòng thử lại sau.");
     } finally {
       setSubmitting(false);
     }
@@ -96,7 +98,9 @@ export const RatingModal = ({ isOpen, onClose, movie, onRatingSubmitted }) => {
       onClose();
     } catch (err) {
       console.error("Error deleting rating:", err);
-      alert("Đã xảy ra lỗi khi xóa đánh giá.");
+      const serverMsg = err.response?.data?.message;
+      const errorText = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      alert(errorText || "Đã xảy ra lỗi khi xóa đánh giá.");
     } finally {
       setSubmitting(false);
     }
