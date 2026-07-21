@@ -266,11 +266,13 @@ export const Header = () => {
               <Link to="/"><HomeIcon size={18} /> Trang chủ</Link>
             </li>
             
-            {/* Menu Thể Loại (Hover xổ xuống) */}
+            {/* Menu Thể Loại (Hover xổ xuống) - Đã đổi Link thành div */}
             <li className="nav-item has-mega-menu" 
                 onMouseEnter={() => setActiveMenu('genres')} 
                 onMouseLeave={() => setActiveMenu(null)}>
-              <Link to="/search"><GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span></Link>
+              <div className="nav-link-trigger">
+                <GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span>
+              </div>
               {activeMenu === 'genres' && (
                 <div className="mega-menu-box">
                   {genres.map(g => (
@@ -280,11 +282,13 @@ export const Header = () => {
               )}
             </li>
 
-            {/* Menu Quốc Gia (Hover xổ xuống) */}
+            {/* Menu Quốc Gia (Hover xổ xuống) - Đã đổi Link thành div */}
             <li className="nav-item has-mega-menu"
                 onMouseEnter={() => setActiveMenu('countries')}
                 onMouseLeave={() => setActiveMenu(null)}>
-              <Link to="/search"><FilmIcon size={18} /> Quốc Gia <span className="arrow-down">▾</span></Link>
+              <div className="nav-link-trigger">
+                <FilmIcon size={18} /> Quốc Gia <span className="arrow-down">▾</span>
+              </div>
               {activeMenu === 'countries' && (
                 <div className="mega-menu-box">
                   {mockCountries.map(c => (
