@@ -200,7 +200,9 @@ export class MoviesService {
     const {
       keyword,
       countryId,
+      country,
       type,
+      status,
       genreIds,
       releaseYear,
       sortBy = 'newest',
@@ -222,14 +224,25 @@ export class MoviesService {
         queryBuilder.andWhere('movie.type = :type', { type });
       }
 
+      if (status) {
+        queryBuilder.andWhere('movie.status = :status', { status });
+      }
+
       if (releaseYear) {
         queryBuilder.andWhere('movie.releaseYear = :releaseYear', { releaseYear });
       }
 
-      if (countryId) {
-        queryBuilder.innerJoin('movie.countries', 'country', 'country.id = :countryId', {
-          countryId,
-        });
+      if (countryId || country) {
+        const countryVal = country || countryId;
+        if (!isNaN(Number(countryVal))) {
+          queryBuilder.innerJoin('movie.countries', 'country', 'country.id = :cId', {
+            cId: Number(countryVal),
+          });
+        } else {
+          queryBuilder.innerJoin('movie.countries', 'country', 'LOWER(country.slug) = LOWER(:cSlug)', {
+            cSlug: String(countryVal).toLowerCase(),
+          });
+        }
       }
 
       if (genreIds && genreIds.length > 0) {

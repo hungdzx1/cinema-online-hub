@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { SearchInput } from '../common/SearchInput';
 import { Button } from '../common/Button';
 import { HistoryIcon, BookmarkIcon, LoginIcon, HomeIcon, GridIcon, FilmIcon, StarIcon, FlameIcon } from '../common/Icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-<<<<<<< HEAD
+
 import { useWatchlist } from '../../context/WatchlistContext';
-=======
+
 import { genreApi } from '../../services/genreApi';
->>>>>>> 1b11b30254b38452d44826a568db248cbf895cd9
+import { countryApi } from '../../services/countryApi';
+
 import './layout.css';
 
 /* ---- Avatar fallback helper ---- */
@@ -37,17 +38,37 @@ const UserAvatar = ({ user }) => {
 export const Header = () => {
   const [searchValue, setSearchValue] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false); // ✅ THÊM STATE NÀY
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, isLoggedIn } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { watchlist } = useWatchlist();
   const dropdownRef = useRef(null);
 
+  // Active state checking based on location and search params
+  const searchParams = new URLSearchParams(location.search);
+  const isHomeActive = location.pathname === '/';
+  const isGenreActive = location.pathname === '/search' && searchParams.has('genreIds');
+  const isCountryActive = location.pathname === '/search' && searchParams.has('country');
+  const isPhimLeActive = location.pathname === '/search' && searchParams.get('type') === 'phim_le';
+  const isPhimBoActive = location.pathname === '/search' && searchParams.get('type') === 'phim_bo';
+  const isOngoingActive = location.pathname === '/search' && searchParams.get('status') === 'ongoing';
+  const isCompletedActive = location.pathname === '/search' && searchParams.get('status') === 'completed';
+  const isTopRatingActive = location.pathname === '/search' && searchParams.get('sortBy') === 'rating';
+
   // State cho menu thể loại / quốc gia
-  const [genres, setGenres] = useState([]);
-  const [activeMenu, setActiveMenu] = useState(null); 
-  const mockCountries = [
+  const [genres, setGenres] = useState([
+    { id: 1, name: 'Hành Động', slug: 'hanh-dong' },
+    { id: 2, name: 'Tình Cảm', slug: 'tinh-cam' },
+    { id: 3, name: 'Hài Hước', slug: 'hai-huoc' },
+    { id: 4, name: 'Cổ Trang', slug: 'co-trang' },
+    { id: 5, name: 'Võ Thuật', slug: 'vo-thuat' },
+    { id: 6, name: 'Kinh Dị', slug: 'kinh-di' },
+    { id: 7, name: 'Hoạt Hình', slug: 'hoat-hinh' },
+    { id: 8, name: 'Viễn Tưởng', slug: 'vien-tuong' },
+  ]);
+  const [countries, setCountries] = useState([
     { id: 1, name: 'Việt Nam', slug: 'viet-nam' },
     { id: 2, name: 'Hàn Quốc', slug: 'han-quoc' },
     { id: 3, name: 'Trung Quốc', slug: 'trung-quoc' },
@@ -58,19 +79,31 @@ export const Header = () => {
     { id: 8, name: 'Đài Loan', slug: 'dai-loan' },
     { id: 9, name: 'Ấn Độ', slug: 'an-do' },
     { id: 10, name: 'Anh', slug: 'anh' },
-  ];
+  ]);
+  const [activeMenu, setActiveMenu] = useState(null);
 
-  // Gọi API lấy danh sách thể loại
+  // Gọi API lấy danh sách thể loại & quốc gia
   useEffect(() => {
-    const fetchGenres = async () => {
+    const fetchMenuData = async () => {
       try {
-        const data = await genreApi.getAll();
-        setGenres(Array.isArray(data) ? data : []);
-      } catch (e) { 
-        console.error("Lỗi tải thể loại", e); 
+        const genresData = await genreApi.getAll();
+        if (Array.isArray(genresData) && genresData.length > 0) {
+          setGenres(genresData);
+        }
+      } catch (e) {
+        console.error("Lỗi tải thể loại", e);
+      }
+
+      try {
+        const countriesData = await countryApi.getAll();
+        if (Array.isArray(countriesData) && countriesData.length > 0) {
+          setCountries(countriesData);
+        }
+      } catch (e) {
+        console.error("Lỗi tải quốc gia", e);
       }
     };
-    fetchGenres();
+    fetchMenuData();
   }, []);
 
   // ✅ THÊM EFFECT BẮT SỰ KIỆN CUỘN CHUỘT
@@ -126,15 +159,15 @@ export const Header = () => {
           </div>
 
           <div className="action-section">
-            <Button 
-              variant="dark" 
+            <Button
+              variant="dark"
               icon={<HistoryIcon size={18} />}
               onClick={() => navigate(isLoggedIn ? '/profile?tab=history' : '/login')}
             >
               Lịch sử
             </Button>
-            <Button 
-              variant="dark" 
+            <Button
+              variant="dark"
               icon={<BookmarkIcon size={18} />}
               onClick={() => navigate('/watchlist')}
             >
@@ -267,56 +300,65 @@ export const Header = () => {
       <div className="main-nav">
         <div className="container">
           <ul className="nav-list">
-            <li className="nav-item active">
+            <li className={`nav-item ${isHomeActive ? 'active' : ''}`}>
               <Link to="/"><HomeIcon size={18} /> Trang chủ</Link>
             </li>
-            
+
             {/* Menu Thể Loại (Hover xổ xuống) */}
-            <li className="nav-item has-mega-menu" 
-                onMouseEnter={() => setActiveMenu('genres')} 
-                onMouseLeave={() => setActiveMenu(null)}>
+            <li className={`nav-item has-mega-menu ${isGenreActive ? 'active' : ''}`}
+              onMouseEnter={() => setActiveMenu('genres')}
+              onMouseLeave={() => setActiveMenu(null)}>
               <Link to="/search"><GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span></Link>
               {activeMenu === 'genres' && (
                 <div className="mega-menu-box">
                   {genres.map(g => (
-                    <Link key={g.id} to={`/search?genreIds=${g.id}`} className="mega-menu-item">{g.name}</Link>
+                    <Link
+                      key={g.id}
+                      to={`/search?genreIds=${g.id}`}
+                      className="mega-menu-item"
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      {g.name}
+                    </Link>
                   ))}
                 </div>
               )}
             </li>
 
             {/* Menu Quốc Gia (Hover xổ xuống) */}
-            <li className="nav-item has-mega-menu"
-                onMouseEnter={() => setActiveMenu('countries')}
-                onMouseLeave={() => setActiveMenu(null)}>
+            <li className={`nav-item has-mega-menu ${isCountryActive ? 'active' : ''}`}
+              onMouseEnter={() => setActiveMenu('countries')}
+              onMouseLeave={() => setActiveMenu(null)}>
               <Link to="/search"><FilmIcon size={18} /> Quốc Gia <span className="arrow-down">▾</span></Link>
               {activeMenu === 'countries' && (
                 <div className="mega-menu-box">
-                  {mockCountries.map(c => (
-                    <Link key={c.id} to={`/search?country=${c.slug}`} className="mega-menu-item">{c.name}</Link>
+                  {countries.map(c => (
+                    <Link
+                      key={c.id}
+                      to={`/search?country=${c.slug || c.id}`}
+                      className="mega-menu-item"
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      {c.name}
+                    </Link>
                   ))}
                 </div>
               )}
             </li>
 
-            <li className="nav-item">
+            <li className={`nav-item ${isPhimLeActive ? 'active' : ''}`}>
               <Link to="/search?type=phim_le"><FilmIcon size={18} /> Phim Lẻ</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isPhimBoActive ? 'active' : ''}`}>
               <Link to="/search?type=phim_bo"><FlameIcon size={18} /> Phim Bộ</Link>
             </li>
-            <li className="nav-item">
-              <Link to="/random" style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
-                <StarIcon size={18} /> Random Phim
-              </Link>
-            </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isOngoingActive ? 'active' : ''}`}>
               <Link to="/search?status=ongoing"><FlameIcon size={18} /> Đang Chiếu</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isCompletedActive ? 'active' : ''}`}>
               <Link to="/search?status=completed"><BookmarkIcon size={18} /> Hoàn Thành</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isTopRatingActive ? 'active' : ''}`}>
               <Link to="/search?sortBy=rating"><StarIcon size={18} /> Đánh Giá Cao</Link>
             </li>
           </ul>
