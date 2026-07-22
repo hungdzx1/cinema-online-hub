@@ -102,6 +102,39 @@ export const EpisodeManager = ({ movieId }) => {
     }
   };
 
+  const renderInlineForm = () => (
+    <div className="episode-form-inline" style={{ marginTop: 8, marginBottom: 8 }}>
+      <input
+        type="number"
+        placeholder="Số tập"
+        value={form.episodeNumber}
+        onChange={(e) => setForm({ ...form, episodeNumber: e.target.value })}
+        min="1"
+      />
+      <input
+        placeholder="Tên tập (tùy chọn)"
+        value={form.title}
+        onChange={(e) => setForm({ ...form, title: e.target.value })}
+      />
+      <input
+        placeholder="Link video (embed URL) *"
+        value={form.embedUrl}
+        onChange={(e) => setForm({ ...form, embedUrl: e.target.value })}
+      />
+      <input
+        type="number"
+        placeholder="Thời lượng (s)"
+        value={form.durationSeconds}
+        onChange={(e) => setForm({ ...form, durationSeconds: e.target.value })}
+        min="0"
+      />
+      <div className="episode-form-actions">
+        <button className="episode-save-btn" onClick={handleSave}>Lưu</button>
+        <button className="episode-cancel-btn" onClick={resetForm}>Hủy</button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="episode-section">
       <div className="episode-section-header">
@@ -119,23 +152,31 @@ export const EpisodeManager = ({ movieId }) => {
         <div style={{ color: 'var(--text-muted)', padding: 16, fontSize: 14 }}>Đang tải danh sách tập...</div>
       ) : (
         <div className="episode-list">
+          {/* Form thêm tập mới (khi không chọn chỉnh sửa tập cụ thể nào) */}
+          {showForm && !editingEp && renderInlineForm()}
+
           {episodes.map((ep) => (
-            <div key={ep.id} className="episode-item">
-              <div className="episode-number">{ep.episodeNumber}</div>
-              <div className="episode-info">
-                <div className="episode-title">{ep.title || `Tập ${ep.episodeNumber}`}</div>
-                <div className="episode-meta">
-                  {formatDuration(ep.durationSeconds)} • {(ep.viewCount || 0).toLocaleString()} lượt xem
+            <div key={ep.id} className="episode-item-container" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div className={`episode-item ${editingEp?.id === ep.id ? 'is-editing' : ''}`}>
+                <div className="episode-number">{ep.episodeNumber}</div>
+                <div className="episode-info">
+                  <div className="episode-title">{ep.title || `Tập ${ep.episodeNumber}`}</div>
+                  <div className="episode-meta">
+                    {formatDuration(ep.durationSeconds)} • {(ep.viewCount || 0).toLocaleString()} lượt xem
+                  </div>
+                </div>
+                <div className="episode-actions">
+                  <button className="admin-action-btn btn-edit" title="Sửa" onClick={() => openEditForm(ep)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button className="admin-action-btn btn-delete" title="Xóa" onClick={() => setDeleteTarget(ep)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
                 </div>
               </div>
-              <div className="episode-actions">
-                <button className="admin-action-btn btn-edit" title="Sửa" onClick={() => openEditForm(ep)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
-                <button className="admin-action-btn btn-delete" title="Xóa" onClick={() => setDeleteTarget(ep)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-              </div>
+
+              {/* Form sửa tập hiện ngay bên dưới tập đang chọn */}
+              {showForm && editingEp?.id === ep.id && renderInlineForm()}
             </div>
           ))}
 
@@ -144,40 +185,6 @@ export const EpisodeManager = ({ movieId }) => {
               Chưa có tập nào. Nhấn "Thêm tập" để bắt đầu.
             </div>
           )}
-        </div>
-      )}
-
-      {/* Add/Edit Episode Form */}
-      {showForm && (
-        <div className="episode-form-inline" style={{ marginTop: 12 }}>
-          <input
-            type="number"
-            placeholder="Số tập"
-            value={form.episodeNumber}
-            onChange={(e) => setForm({ ...form, episodeNumber: e.target.value })}
-            min="1"
-          />
-          <input
-            placeholder="Tên tập (tùy chọn)"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <input
-            placeholder="Link video (embed URL) *"
-            value={form.embedUrl}
-            onChange={(e) => setForm({ ...form, embedUrl: e.target.value })}
-          />
-          <input
-            type="number"
-            placeholder="Thời lượng (s)"
-            value={form.durationSeconds}
-            onChange={(e) => setForm({ ...form, durationSeconds: e.target.value })}
-            min="0"
-          />
-          <div className="episode-form-actions">
-            <button className="episode-save-btn" onClick={handleSave}>Lưu</button>
-            <button className="episode-cancel-btn" onClick={resetForm}>Hủy</button>
-          </div>
         </div>
       )}
 

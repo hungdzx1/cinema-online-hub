@@ -86,6 +86,41 @@ export const MoviesPage = () => {
     return sortDir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc';
   };
 
+  const handleToggleVisible = async (movie) => {
+    const newVisible = !movie.isVisible;
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, isVisible: newVisible } : m)));
+    try {
+      await movieApi.update(movie.id, { isVisible: newVisible });
+      toast.success(`Đã ${newVisible ? 'hiển thị' : 'ẩn'} phim "${movie.title}"`);
+    } catch {
+      toast.error('Cập nhật trạng thái hiển thị thất bại');
+      fetchMovies();
+    }
+  };
+
+  const handleToggleFeatured = async (movie) => {
+    const newFeatured = !movie.isFeatured;
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, isFeatured: newFeatured } : m)));
+    try {
+      await movieApi.update(movie.id, { isFeatured: newFeatured });
+      toast.success(`Đã ${newFeatured ? 'bật' : 'tắt'} nổi bật cho phim "${movie.title}"`);
+    } catch {
+      toast.error('Cập nhật trạng thái nổi bật thất bại');
+      fetchMovies();
+    }
+  };
+
+  const handleStatusChange = async (movie, newStatus) => {
+    setMovies((prev) => prev.map((m) => (m.id === movie.id ? { ...m, status: newStatus } : m)));
+    try {
+      await movieApi.update(movie.id, { status: newStatus });
+      toast.success(`Đã đổi trạng thái phim "${movie.title}" sang ${STATUS_LABELS[newStatus] || newStatus}`);
+    } catch {
+      toast.error('Cập nhật trạng thái phim thất bại');
+      fetchMovies();
+    }
+  };
+
   const openAdd = () => { setEditingMovie(null); setModalOpen(true); };
   const openEdit = (movie) => { setEditingMovie(movie); setModalOpen(true); };
 
@@ -182,18 +217,41 @@ export const MoviesPage = () => {
                     </td>
                     <td><span className={`admin-badge badge-${movie.type?.replace('_', '-')}`}>{TYPE_LABELS[movie.type] || movie.type}</span></td>
                     <td>{movie.releaseYear || '—'}</td>
-                    <td><span className={`admin-badge badge-${movie.status}`}>{STATUS_LABELS[movie.status] || movie.status}</span></td>
+                    <td>
+                      <select
+                        className={`admin-status-select badge-${movie.status}`}
+                        value={movie.status}
+                        onChange={(e) => handleStatusChange(movie, e.target.value)}
+                        title="Nhấn để đổi trạng thái"
+                      >
+                        {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                          <option key={k} value={k}>{v}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td>{(movie.viewCount || 0).toLocaleString()}</td>
                     <td>{movie.avgRating ? Number(movie.avgRating).toFixed(1) : '0.0'}</td>
                     <td>
-                      <div className={`admin-toggle ${movie.isVisible ? 'active' : ''}`} title={movie.isVisible ? 'Đang hiện' : 'Đang ẩn'} />
+                      <div
+                        className={`admin-toggle ${movie.isVisible ? 'active' : ''}`}
+                        title={movie.isVisible ? 'Đang hiện (Bấm để ẩn)' : 'Đang ẩn (Bấm để hiện)'}
+                        onClick={() => handleToggleVisible(movie)}
+                      />
                     </td>
                     <td>
-                      <div className={`admin-toggle ${movie.isFeatured ? 'active' : ''}`} title={movie.isFeatured ? 'Nổi bật' : 'Bình thường'} />
+                      <div
+                        className={`admin-toggle ${movie.isFeatured ? 'active' : ''}`}
+                        title={movie.isFeatured ? 'Đang nổi bật (Bấm để tắt)' : 'Bình thường (Bấm để bật)'}
+                        onClick={() => handleToggleFeatured(movie)}
+                      />
                     </td>
                     <td>
                       <div className="admin-action-btns">
-                        <button className="admin-action-btn btn-view" title="Xem" onClick={() => window.open(`/phim/${movie.slug}`, '_blank')}>
+                        <button
+                          className="admin-action-btn btn-view"
+                          title="Xem trang phim"
+                          onClick={() => window.open(`/movie/${movie.slug}`, '_blank')}
+                        >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                         <button className="admin-action-btn btn-edit" title="Sửa" onClick={() => openEdit(movie)}>

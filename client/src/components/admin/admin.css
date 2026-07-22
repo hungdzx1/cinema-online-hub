@@ -392,6 +392,12 @@
 .admin-stat-card.stat-users     .admin-stat-icon { background: rgba(139,92,246,0.12); color: #8b5cf6; }
 
 /* ===== Admin Chart Section ===== */
+.admin-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
 .admin-chart-section {
   background: var(--bg-card);
   border: 1px solid rgba(255,255,255,0.06);
@@ -598,6 +604,25 @@
 .badge-user      { background: rgba(59,130,246,0.12);  color: #3b82f6; }
 .badge-active    { background: rgba(16,185,129,0.12); color: #10b981; }
 .badge-banned    { background: rgba(239,68,68,0.12);  color: #ef4444; }
+
+/* Status Select Dropdown in Table */
+.admin-status-select {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.admin-status-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 500;
+}
 
 /* Toggle Switch */
 .admin-toggle {
@@ -879,6 +904,11 @@
 
 .episode-item:hover {
   border-color: rgba(255,255,255,0.12);
+}
+
+.episode-item.is-editing {
+  border-color: var(--color-primary);
+  background: rgba(255,71,87,0.06);
 }
 
 .episode-number {
