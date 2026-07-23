@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { TrendingCarousel } from '../components/home/TrendingCarousel';
 import { movieApi } from '../services/movieApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import '../components/home/home.css';
 
 // Component Hero Banner (Chạy video/ảnh nền, có mũi tên và chấm)
@@ -107,6 +108,7 @@ const Hero = ({ movies }) => {
 };
 
 export const HomePage = () => {
+  useDocumentTitle('Trang Chủ - Xem Phim Trực Tuyến');
   const [allMovies, setAllMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 

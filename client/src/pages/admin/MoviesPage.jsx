@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../context/ToastContext';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import '../../components/admin/admin.css';
 
 const TYPE_LABELS = { phim_le: 'Phim lẻ', phim_bo: 'Phim bộ', hoat_hinh: 'Hoạt hình', anime: 'Anime' };
@@ -12,6 +13,7 @@ const STATUS_LABELS = { ongoing: 'Đang chiếu', completed: 'Hoàn thành', upc
 const ITEMS_PER_PAGE = 10;
 
 export const MoviesPage = () => {
+  useDocumentTitle('Quản Lý Phim');
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

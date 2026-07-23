@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Pagination } from '../../components/common/Pagination';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import '../../components/admin/admin.css';
 
 const ITEMS_PER_PAGE = 10;
@@ -17,6 +18,7 @@ const formatDate = (dateStr) => {
 const getInitials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join('');
 
 export const UsersPage = () => {
+  useDocumentTitle('Quản Lý Người Dùng');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

@@ -4,6 +4,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../services/userApi';
 import { historyApi } from '../services/historyApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './profile.css';
 
 /* ---- Helpers ---- */
@@ -55,6 +56,7 @@ const HistoryIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="
 
 /* ============== COMPONENT ============== */
 export const ProfilePage = () => {
+  useDocumentTitle('Trang Cá Nhân');
   const { user, isLoggedIn, updateUser } = useAuth();
   const fileInputRef = useRef(null);
   const [searchParams] = useSearchParams();

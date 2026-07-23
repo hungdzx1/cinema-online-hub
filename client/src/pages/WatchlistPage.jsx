@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useWatchlist } from '../context/WatchlistContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './watchlist.css';
 
 const BookmarkHeaderIcon = () => (
@@ -24,6 +25,7 @@ const StarIcon = () => (
 );
 
 export const WatchlistPage = () => {
+  useDocumentTitle('Phim Theo Dõi & Xem Sau');
   const navigate = useNavigate();
   const { watchlist, loading, removeFromWatchlist } = useWatchlist();
 

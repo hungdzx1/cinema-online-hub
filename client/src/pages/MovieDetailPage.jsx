@@ -9,6 +9,7 @@ import { CommentSection } from '../components/movie/CommentSection';
 import { VideoPlayer } from '../components/movie/player/VideoPlayer';
 import { EpisodeNavigation } from '../components/movie/player/EpisodeNavigation';
 import { movieApi } from '../services/movieApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import '../components/movie/detail.css';
 
 export const MovieDetailPage = () => {
@@ -28,6 +29,19 @@ export const MovieDetailPage = () => {
   const activeEpisodeNumber = useMemo(() => {
     return parseInt(searchParams.get('episode'), 10) || 1;
   }, [searchParams]);
+
+  // Cập nhật tiêu đề trang động theo tên phim và tập phim đang xem
+  const dynamicTitle = useMemo(() => {
+    if (loading) return 'Đang tải thông tin phim...';
+    if (error || !data?.movie) return 'Không tìm thấy phim';
+    const movieTitle = data.movie.title;
+    if (isWatchMode) {
+      return `Xem phim ${movieTitle} - Tập ${activeEpisodeNumber}`;
+    }
+    return `${movieTitle} - Thông tin & Xem phim`;
+  }, [loading, error, data, isWatchMode, activeEpisodeNumber]);
+
+  useDocumentTitle(dynamicTitle);
 
   // Fetch movie details
   useEffect(() => {

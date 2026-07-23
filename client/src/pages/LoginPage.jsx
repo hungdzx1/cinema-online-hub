@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/authApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './login.css';
 
 /* ---- Inline SVG icons ---- */
@@ -53,20 +54,17 @@ const CheckIcon = () => (
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { login, isLoggedIn, user } = useAuth();
-
-  // If already logged in, redirect based on role
-  useEffect(() => {
-    if (isLoggedIn && user) {
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
-    }
-  }, [isLoggedIn, user, navigate]);
-
+  
   // 'login' | 'register' | 'forgot'
   const [mode, setMode] = useState('login');
+
+  const pageTitle = useMemo(() => {
+    if (mode === 'register') return 'Đăng Ký Tài Khoản';
+    if (mode === 'forgot') return 'Quên Mật Khẩu';
+    return 'Đăng Nhập';
+  }, [mode]);
+
+  useDocumentTitle(pageTitle);
 
   // Form fields
   const [email, setEmail] = useState('');

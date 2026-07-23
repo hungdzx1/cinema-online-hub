@@ -5,6 +5,7 @@ import { MovieCard } from '../components/common/MovieCard';
 import { movieApi } from '../services/movieApi';
 import { genreApi } from '../services/genreApi';
 import { countryApi } from '../services/countryApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './search.css';
 
 export const SearchPage = () => {
@@ -17,6 +18,13 @@ export const SearchPage = () => {
   const typeParam = searchParams.get('type') || '';
   const statusParam = searchParams.get('status') || '';
   const sortByParam = searchParams.get('sortBy') || 'newest';
+
+  const pageTitle = useMemo(() => {
+    if (keyword) return `Tìm kiếm "${keyword}"`;
+    return 'Tìm Kiếm & Lọc Phim';
+  }, [keyword]);
+
+  useDocumentTitle(pageTitle);
 
   const selectedGenreIds = useMemo(() => {
     return genreIdsParam ? genreIdsParam.split(',').map(Number).filter(n => !isNaN(n)) : [];

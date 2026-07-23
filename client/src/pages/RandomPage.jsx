@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { movieApi } from '../services/movieApi';
 import { useTheme } from '../context/ThemeContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const FALLBACK = 'https://placehold.co/300x450/1a1a22/f59e0b?text=PHIMPLAY24';
 
@@ -47,6 +48,7 @@ const SORTS = [
 ];
 
 export const RandomPage = () => {
+  useDocumentTitle('Gợi Ý Phim Ngẫu Nhiên');
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 

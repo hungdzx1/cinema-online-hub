@@ -16,6 +16,7 @@ import {
 import { adminApi } from '../../services/adminApi';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useTheme } from '../../context/ThemeContext';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import '../../components/admin/admin.css';
 
 ChartJS.register(
@@ -49,6 +50,7 @@ const CHART_COLORS = [
 ];
 
 export const DashboardPage = () => {
+  useDocumentTitle('Bảng Điều Khiển Quản Trị');
   const [stats, setStats] = useState(null);
   const [genreStats, setGenreStats] = useState([]);
   const [topMovies, setTopMovies] = useState([]);
