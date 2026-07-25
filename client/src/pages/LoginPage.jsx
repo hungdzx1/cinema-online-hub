@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/authApi';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './login.css';
+import { LoginTransition } from '../components/common/LoginTransition';
+import { Cinema3DIntro } from '../components/common/Cinema3dintro';
 
 /* ---- Inline SVG icons ---- */
 const EmailIcon = () => (
@@ -78,6 +80,11 @@ export const LoginPage = () => {
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // ===== BỔ SUNG: điều phối 2 giai đoạn hiệu ứng sau đăng nhập =====
+  // stage: null (chưa đăng nhập) -> 'transition' (2D card+star) -> 'cinema3d' (3D ~10s) -> điều hướng thật
+  const [stage, setStage] = useState(null);
+  const [finalDestination, setFinalDestination] = useState(null);
+
   const resetForm = () => {
     setEmail(''); setPassword(''); setUsername('');
     setError(''); setSuccess(''); setFieldErrors({});
@@ -110,14 +117,12 @@ export const LoginPage = () => {
     setLoading(true);
 
     try {
-      if (mode === 'login') {
+           if (mode === 'login') {
         const res = await authApi.login({ email, password });
         login(res.accessToken, res.user);
-        if (res.user?.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        // ===== BỔ SUNG: bắt đầu giai đoạn 1 (LoginTransition), lưu đích đến thật để dùng sau =====
+        setFinalDestination(res.user?.role === 'admin' ? '/admin' : '/');
+        setStage('transition');
       } else if (mode === 'register') {
         await authApi.register({ username, email, password });
         setSuccess('Đăng ký thành công! Hãy đăng nhập.');
@@ -339,7 +344,26 @@ export const LoginPage = () => {
           </Link>
         </div>
 
-      </div>
+        </div>
+
+      {/* ===== GIAI ĐOẠN 1: LoginTransition (2D card + star field, ~3.8s) =====
+           Không truyền `destination` cho nó tự navigate nữa — dùng `onDone`
+           để báo xong, rồi component cha (LoginPage) chuyển sang giai đoạn 2. */}
+      {stage === 'transition' && (
+        <LoginTransition
+          username={user?.username}
+          onDone={() => setStage('cinema3d')}
+        />
+      )}
+
+      {/* ===== GIAI ĐOẠN 2: Cinema3DIntro (cảnh 3D ~10s, tự bay, tự điều hướng) ===== */}
+      {stage === 'cinema3d' && (
+        <Cinema3DIntro
+          duration={10000}
+          destination={finalDestination}
+          username={user?.username}
+        />
+      )}
     </div>
   );
 };

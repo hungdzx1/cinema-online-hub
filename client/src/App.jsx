@@ -17,6 +17,7 @@ import { RandomPage } from './pages/RandomPage';
 import { WatchlistProvider } from './context/WatchlistContext';
 import { CategoriesPage } from './pages/admin/CategoriesPage';
 import { CommentsPage } from './pages/admin/CommentsPage';
+import { NotificationsPage } from './pages/admin/NotificationsPage'; // ✅ THÊM
 import './index.css';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
               <Route path="users" element={<UsersPage />} />
               <Route path="comments" element={<CommentsPage />} />
               <Route path="categories" element={<CategoriesPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />  {/* ✅ THÊM */}
             </Route>
           </Routes>
         </BrowserRouter>

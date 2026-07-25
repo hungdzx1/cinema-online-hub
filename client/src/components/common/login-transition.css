@@ -1,0 +1,199 @@
+/* ===== LOGIN 3D TRANSITION ===== */
+.lt-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 99999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  overflow: hidden;
+}
+
+.lt-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* ===== PHASES ===== */
+
+/* Phase 0: Ngay khi mount — chưa hiện gì */
+.phase-0 .lt-canvas { opacity: 0; }
+.phase-0 .lt-logo-container { opacity: 0; transform: scale(0.5) rotateX(90deg); }
+.phase-0 .lt-ring { transform: scale(0); opacity: 0; }
+.phase-0 .lt-flash { opacity: 0; }
+
+/* Phase 1: Star field bắt đầu bay */
+.phase-1 .lt-canvas { opacity: 1; }
+.phase-1 .lt-logo-container { opacity: 0; transform: scale(0.5) rotateX(90deg); }
+.phase-1 .lt-ring {
+  transform: scale(0);
+  opacity: 0;
+  animation: ringExpand 1.5s ease-out forwards;
+}
+.phase-1 .lt-ring-1 { animation-delay: 0s; }
+.phase-1 .lt-ring-2 { animation-delay: 0.15s; }
+.phase-1 .lt-ring-3 { animation-delay: 0.3s; }
+.phase-1 .lt-flash { opacity: 0; }
+
+/* Phase 2: Star field bay nhanh + ring mở */
+.phase-2 .lt-canvas { opacity: 1; }
+.phase-2 .lt-logo-container {
+  opacity: 0;
+  transform: scale(0.6) rotateX(30deg);
+}
+.phase-2 .lt-ring {
+  opacity: 0.3;
+  transform: scale(1);
+}
+
+/* Phase 3: Logo 3D xoay vào + text welcome */
+.phase-3 .lt-canvas { opacity: 0.6; }
+.phase-3 .lt-logo-container {
+  opacity: 1;
+  transform: scale(1) rotateX(0deg) rotateY(0deg);
+  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.phase-3 .lt-welcome {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.6s 0.3s ease-out;
+}
+.phase-3 .lt-ring { opacity: 0; }
+.phase-3 .lt-flash { opacity: 0; }
+
+/* Phase 4: Fade out tất cả */
+.phase-4 .lt-canvas { opacity: 0; transition: opacity 0.6s; }
+.phase-4 .lt-logo-container {
+  opacity: 0;
+  transform: scale(1.1) translateY(-30px);
+  transition: all 0.5s ease-out;
+}
+.phase-4 .lt-ring { opacity: 0; transition: opacity 0.3s; }
+
+/* ===== LOGO 3D ===== */
+.lt-logo-container {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  transform-style: preserve-3d;
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lt-logo-3d {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transform-style: preserve-3d;
+  text-shadow:
+    0 0 20px rgba(255, 71, 87, 0.5),
+    0 0 60px rgba(255, 71, 87, 0.3),
+    0 0 100px rgba(255, 165, 2, 0.2);
+}
+
+.lt-logo-text {
+  color: #ffffff;
+}
+
+.lt-logo-accent {
+  background: linear-gradient(90deg, #ff4757, #ffa502);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: glowPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  from { filter: brightness(1); text-shadow: 0 0 20px rgba(255,71,87,0.3); }
+  to   { filter: brightness(1.2); text-shadow: 0 0 40px rgba(255,165,2,0.6); }
+}
+
+.lt-welcome {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 16px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease-out;
+}
+
+/* ===== ENERGY RINGS ===== */
+.lt-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 165, 2, 0.6);
+  box-shadow:
+    0 0 15px rgba(255, 71, 87, 0.3),
+    inset 0 0 15px rgba(255, 165, 2, 0.1);
+  pointer-events: none;
+}
+
+.lt-ring-1 {
+  width: 200px; height: 200px;
+  animation: ringExpand 1.8s ease-out forwards;
+}
+.lt-ring-2 {
+  width: 400px; height: 400px;
+  animation: ringExpand 2s 0.15s ease-out forwards;
+}
+.lt-ring-3 {
+  width: 600px; height: 600px;
+  animation: ringExpand 2.2s 0.3s ease-out forwards;
+}
+
+@keyframes ringExpand {
+  0% {
+    transform: scale(0) rotateX(70deg);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.5) rotateX(70deg);
+    opacity: 0;
+  }
+}
+
+/* ===== FLASH ===== */
+.lt-flash {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(circle, rgba(255,165,2,0.4), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Phase 1 flash nhanh */
+.phase-1 .lt-flash {
+  animation: flashBang 0.6s 0.2s ease-out forwards;
+}
+
+@keyframes flashBang {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .lt-logo-3d { font-size: 36px; }
+  .lt-welcome { font-size: 14px; letter-spacing: 1px; }
+  .lt-ring-1 { width: 150px; height: 150px; }
+  .lt-ring-2 { width: 300px; height: 300px; }
+  .lt-ring-3 { width: 450px; height: 450px; }
+}

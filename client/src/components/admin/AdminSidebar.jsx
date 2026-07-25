@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import './admin.css';
 
 const MENU_ITEMS = [
@@ -36,7 +36,6 @@ const MENU_ITEMS = [
       </svg>
     ),
   },
-  // ✅ THÊM MỤC BÌNH LUẬN
   {
     path: '/admin/comments',
     label: 'Quản lý bình luận',
@@ -46,7 +45,6 @@ const MENU_ITEMS = [
       </svg>
     ),
   },
-  // ✅ THÊM MỤC DANH MỤC (THỂ LOẠI & QUỐC GIA)
   {
     path: '/admin/categories',
     label: 'Thể loại & Quốc gia',
@@ -57,9 +55,21 @@ const MENU_ITEMS = [
       </svg>
     ),
   },
+  // ✅ THÊM MỤC THÔNG BÁO
+  {
+    path: '/admin/notifications',
+    label: 'Quản lý thông báo',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
 ];
 
 export const AdminSidebar = () => {
+  const navigate = useNavigate();
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar-top">
@@ -83,6 +93,36 @@ export const AdminSidebar = () => {
             </NavLink>
           ))}
         </nav>
+            </div>
+
+      {/* ===== Nút trở về trang chủ website ===== */}
+      <div style={{ padding: '16px 12px', borderTop: `1px solid rgba(255,255,255,0.06)` }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            width: '100%', padding: '12px 16px', borderRadius: 10,
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(242,101,34,0.1)';
+            e.currentTarget.style.borderColor = 'rgba(242,101,34,0.3)';
+            e.currentTarget.style.color = '#f26522';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Về trang chủ
+        </button>
       </div>
     </aside>
   );

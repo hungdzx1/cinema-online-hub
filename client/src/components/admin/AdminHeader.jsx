@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +8,71 @@ const BREADCRUMBS = {
   '/admin': 'Dashboard',
   '/admin/movies': 'Quản lý phim',
   '/admin/users': 'Quản lý tài khoản',
+  '/admin/comments': 'Quản lý bình luận',
+  '/admin/categories': 'Thể loại & Quốc gia',
+  '/admin/notifications': 'Thông báo',
 };
+
+// ===== Danh sách mọi chức năng admin để tìm kiếm =====
+const ADMIN_SEARCH_ITEMS = [
+  {
+    path: '/admin',
+    label: 'Dashboard',
+    keywords: ['dashboard', 'bảng điều khiển', 'thống kê', 'tổng quan', 'trang chủ admin'],
+    group: 'Trang',
+  },
+  {
+    path: '/admin/movies',
+    label: 'Quản lý phim',
+    keywords: ['phim', 'movie', 'quản lý phim', 'thêm phim', 'xóa phim', 'sửa phim', 'episode', 'tập phim'],
+    group: 'Quản lý',
+  },
+  {
+    path: '/admin/users',
+    label: 'Quản lý tài khoản',
+    keywords: ['user', 'tài khoản', 'người dùng', 'khách hàng', 'ban', 'role', 'quyền'],
+    group: 'Quản lý',
+  },
+  {
+    path: '/admin/comments',
+    label: 'Quản lý bình luận',
+    keywords: ['comment', 'bình luận', 'đánh giá', 'review', 'ẩn bình luận'],
+    group: 'Quản lý',
+  },
+  {
+    path: '/admin/categories',
+    label: 'Thể loại & Quốc gia',
+    keywords: ['thể loại', 'genre', 'quốc gia', 'country', 'danh mục', 'category'],
+    group: 'Quản lý',
+  },
+  {
+    path: '/admin/notifications',
+    label: 'Thông báo',
+    keywords: ['thông báo', 'notification', 'chuông', 'báo lỗi', 'error report'],
+    group: 'Trang',
+  },
+  {
+    path: '/admin',
+    label: 'Xuất báo cáo',
+    keywords: ['xuất', 'báo cáo', 'report', 'export', 'in ấn', 'print'],
+    group: 'Hành động',
+    action: 'export',
+  },
+  {
+    path: '/',
+    label: 'Về trang chủ website',
+    keywords: ['trang chủ', 'homepage', 'home', 'website', 'ra ngoài', 'exit'],
+    group: 'Điều hướng',
+  },
+];
+
+// Bỏ dấu tiếng Việt để so khớp không phân biệt có dấu/không dấu
+const normalize = (str) =>
+  str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
 
 export const AdminHeader = () => {
   const { pathname } = useLocation();
@@ -16,11 +80,14 @@ export const AdminHeader = () => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
 
-  // ===== BỔ SUNG: state cho dropdown avatar & dropdown thông báo =====
+  // ===== State cho dropdown avatar, thông báo, tìm kiếm =====
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotiMenu, setShowNotiMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
+  const searchRef = useRef(null);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -30,6 +97,9 @@ export const AdminHeader = () => {
       }
       if (notiMenuRef.current && !notiMenuRef.current.contains(e.target)) {
         setShowNotiMenu(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchResults(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -43,7 +113,49 @@ export const AdminHeader = () => {
     navigate('/');
   };
 
-  // ===== BỔ SUNG: dữ liệu thông báo mẫu — thay bằng API thật khi Backend có endpoint =====
+  // ===== Lọc kết quả tìm kiếm theo label + keywords, không phân biệt hoa/thường & dấu =====
+  const searchResults = useMemo(() => {
+    const q = normalize(searchQuery.trim());
+    if (!q) return [];
+    return ADMIN_SEARCH_ITEMS.filter((item) => {
+      const inLabel = normalize(item.label).includes(q);
+      const inKeywords = item.keywords.some((k) => normalize(k).includes(q));
+      return inLabel || inKeywords;
+    });
+  }, [searchQuery]);
+
+  // Gom kết quả theo nhóm để hiển thị có tiêu đề nhóm
+  const groupedResults = useMemo(() => {
+    const groups = {};
+    searchResults.forEach((item) => {
+      if (!groups[item.group]) groups[item.group] = [];
+      groups[item.group].push(item);
+    });
+    return groups;
+  }, [searchResults]);
+
+  const handleSelectResult = (item) => {
+    setSearchQuery('');
+    setShowSearchResults(false);
+    if (item.action === 'export') {
+      // Điều hướng về Dashboard rồi kích hoạt xuất báo cáo
+      navigate(item.path);
+      setTimeout(() => window.print(), 300);
+      return;
+    }
+    navigate(item.path);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && searchResults.length > 0) {
+      handleSelectResult(searchResults[0]);
+    }
+    if (e.key === 'Escape') {
+      setShowSearchResults(false);
+    }
+  };
+
+  // ===== dữ liệu thông báo mẫu — thay bằng API thật khi Backend có endpoint =====
   const notifications = [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -64,8 +176,8 @@ export const AdminHeader = () => {
         className="admin-header-right"
         style={{ display: 'flex', alignItems: 'center', gap: 14 }}
       >
-        {/* ===== BỔ SUNG: Thanh tìm kiếm chức năng ===== */}
-        <div style={{ position: 'relative', width: 260 }}>
+        {/* ===== Thanh tìm kiếm chức năng — đã nối logic lọc thật ===== */}
+        <div ref={searchRef} style={{ position: 'relative', width: 260 }}>
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round"
@@ -79,6 +191,19 @@ export const AdminHeader = () => {
           <input
             type="text"
             placeholder="Tìm kiếm chức năng..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearchResults(true);
+              setShowUserMenu(false);
+              setShowNotiMenu(false);
+            }}
+            onFocus={() => {
+              if (searchQuery.trim()) setShowSearchResults(true);
+              setShowUserMenu(false);
+              setShowNotiMenu(false);
+            }}
+            onKeyDown={handleSearchKeyDown}
             style={{
               width: '100%',
               padding: '9px 14px 9px 36px',
@@ -90,12 +215,62 @@ export const AdminHeader = () => {
               outline: 'none',
             }}
           />
+
+          {showSearchResults && searchQuery.trim() && (
+            <div style={{
+              position: 'absolute', top: 44, left: 0, width: 320,
+              background: isDark ? '#16171d' : '#fff',
+              border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
+              borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+              zIndex: 999, maxHeight: 340, overflowY: 'auto',
+            }}>
+              {searchResults.length === 0 ? (
+                <div style={{ padding: '20px 16px', textAlign: 'center', fontSize: 13, color: isDark ? '#8a99af' : '#94a3b8' }}>
+                  Không tìm thấy chức năng phù hợp.
+                </div>
+              ) : (
+                Object.entries(groupedResults).map(([groupName, items]) => (
+                  <div key={groupName}>
+                    <div style={{
+                      padding: '8px 16px 4px', fontSize: 11, fontWeight: 700,
+                      textTransform: 'uppercase', letterSpacing: 0.5,
+                      color: isDark ? '#6b7789' : '#94a3b8',
+                    }}>
+                      {groupName}
+                    </div>
+                    {items.map((item, idx) => (
+                      <button
+                        key={`${item.path}-${item.label}-${idx}`}
+                        type="button"
+                        onClick={() => handleSelectResult(item)}
+                        style={{
+                          display: 'flex', alignItems: 'center', width: '100%',
+                          padding: '9px 16px', background: 'transparent', border: 'none',
+                          textAlign: 'left', cursor: 'pointer', fontSize: 13.5,
+                          color: isDark ? '#e5e7eb' : '#1e293b',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : '#f8fafc'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
-        {/* ===== BỔ SUNG: Icon chuông thông báo ===== */}
+        {/* Icon chuông thông báo */}
         <div ref={notiMenuRef} style={{ position: 'relative' }}>
           <button
-            onClick={() => setShowNotiMenu((v) => !v)}
+            type="button"
+            onClick={() => {
+              setShowNotiMenu((v) => !v);
+              setShowUserMenu(false);
+              setShowSearchResults(false);
+            }}
             aria-label="Thông báo"
             style={{
               position: 'relative',
@@ -144,6 +319,7 @@ export const AdminHeader = () => {
 
         {/* Theme toggle (giữ nguyên) */}
         <button
+          type="button"
           className="admin-theme-toggle"
           onClick={toggleTheme}
           aria-label={isDark ? 'Chuyển sang sáng' : 'Chuyển sang tối'}
@@ -162,10 +338,15 @@ export const AdminHeader = () => {
           )}
         </button>
 
-        {/* ===== BỔ SUNG: Avatar + dropdown user (đã dời từ đáy Sidebar lên đây) ===== */}
+        {/* Avatar + dropdown user */}
         <div ref={userMenuRef} style={{ position: 'relative' }}>
           <button
-            onClick={() => setShowUserMenu((v) => !v)}
+            type="button"
+            onClick={() => {
+              setShowUserMenu((v) => !v);
+              setShowNotiMenu(false);
+              setShowSearchResults(false);
+            }}
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '4px 10px 4px 4px', borderRadius: 24,
@@ -204,6 +385,7 @@ export const AdminHeader = () => {
               zIndex: 999, overflow: 'hidden',
             }}>
               <button
+                type="button"
                 onClick={handleLogout}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
