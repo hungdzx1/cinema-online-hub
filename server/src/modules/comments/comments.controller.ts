@@ -34,6 +34,14 @@ export class CommentsController {
     return this.commentsService.findByMovie(+movieId);
   }
 
+  // ✅ GET /comments — Admin lấy tất cả bình luận
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findAll() {
+    return this.commentsService.findAll();
+  }
+
   // DELETE /comments/:id — Xóa bình luận của mình (cần login)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
@@ -41,7 +49,7 @@ export class CommentsController {
     return this.commentsService.remove(+id, user.id);
   }
 
-  // PATCH /comments/:id/hide — Ẩn/hiện bình luận (admin)
+  // PATCH /comments/:id/hide — Admin ẩn/hiện bình luận
   @Patch(':id/hide')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

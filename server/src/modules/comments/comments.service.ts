@@ -40,7 +40,14 @@ export class CommentsService {
   async findByMovie(movieId: number): Promise<CommentEntity[]> {
     return this.commentRepository.find({
       where: { movieId, isHidden: false },
-      relations: { user: true },
+      relations: { user: true, movie: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+  // Lấy toàn bộ danh sách bình luận (Dành cho Admin quản lý)
+  async findAll(): Promise<CommentEntity[]> {
+    return this.commentRepository.find({
+      relations: { user: true, movie: true },
       order: { createdAt: 'DESC' },
     });
   }

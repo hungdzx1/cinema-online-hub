@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Movie } from '../movies/movies.entity';
 
 @Entity('comments') // ← Tên bảng vẫn là 'comments'
 export class CommentEntity {
@@ -38,4 +39,7 @@ export class CommentEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
+  @ManyToOne(() => Movie)
+  @JoinColumn({ name: 'movie_id' })
+  movie: Movie;
 }
