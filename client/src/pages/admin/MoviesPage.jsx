@@ -41,6 +41,7 @@ export const MoviesPage = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchMovies(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter + Search + Sort

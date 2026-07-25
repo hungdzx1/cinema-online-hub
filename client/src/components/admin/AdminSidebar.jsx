@@ -1,5 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { NavLink } from 'react-router-dom';
 import './admin.css';
 
 const MENU_ITEMS = [
@@ -37,21 +36,33 @@ const MENU_ITEMS = [
       </svg>
     ),
   },
+  // ✅ THÊM MỤC BÌNH LUẬN
+  {
+    path: '/admin/comments',
+    label: 'Quản lý bình luận',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  // ✅ THÊM MỤC DANH MỤC (THỂ LOẠI & QUỐC GIA)
+  {
+    path: '/admin/categories',
+    label: 'Thể loại & Quốc gia',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
+      </svg>
+    ),
+  },
 ];
 
 export const AdminSidebar = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar-top">
-        {/* Brand */}
         <div className="admin-brand">
           <div className="admin-brand-icon">🎬</div>
           <span className="admin-brand-text">Phim Hay <span className="text-gradient">24h</span></span>
@@ -59,7 +70,6 @@ export const AdminSidebar = () => {
 
         <div className="admin-sidebar-label">QUẢN TRỊ</div>
 
-        {/* Menu */}
         <nav className="admin-nav">
           {MENU_ITEMS.map((item) => (
             <NavLink
@@ -73,28 +83,6 @@ export const AdminSidebar = () => {
             </NavLink>
           ))}
         </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="admin-sidebar-footer">
-        <div className="admin-sidebar-user">
-          <div className="admin-sidebar-avatar">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.username} />
-            ) : (
-              <span>{user?.username?.charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-          <div className="admin-sidebar-user-info">
-            <span className="admin-sidebar-username">{user?.username}</span>
-            <span className="admin-sidebar-role">👑 Admin</span>
-          </div>
-        </div>
-        <button className="admin-logout-btn" onClick={handleLogout} title="Đăng xuất">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-        </button>
       </div>
     </aside>
   );

@@ -1,24 +1,9 @@
 import { fetchApi } from './api';
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('cinema_access_token');
-  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-};
-
 export const adminApi = {
-  // Dashboard stats
-  getStats: () =>
-    fetchApi('/admin/stats', { ...getAuthHeaders() }),
-
-  // Top movies by views
-  getTopMovies: () =>
-    fetchApi('/admin/top-movies', { ...getAuthHeaders() }),
-
-  // Recent users
-  getRecentUsers: () =>
-    fetchApi('/admin/recent-users', { ...getAuthHeaders() }),
-
-  // Genre stats (movies per genre)
-  getGenreStats: () =>
-    fetchApi('/admin/genre-stats', { ...getAuthHeaders() }),
+  // ✅ BỎ getAuthHeaders() ĐI VÌ api.js ĐÃ TỰ ĐỘNG GẮN TOKEN
+  getStats: () => fetchApi('/admin/stats'),
+  getTopMovies: () => fetchApi('/admin/top-movies'),
+  getRecentUsers: () => fetchApi('/admin/recent-users'),
+  getGenreStats: () => fetchApi('/admin/genre-stats'),
 };

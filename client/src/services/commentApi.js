@@ -6,7 +6,7 @@ const getAuthHeaders = () => {
 };
 
 export const commentApi = {
-  // Lấy danh sách bình luận của 1 phim
+  // Lấy bình luận của 1 phim (Dùng cho trang chi tiết và trang Admin)
   getByMovieId: async (movieId) => {
     try {
       return await fetchApi(`/comments/movie/${movieId}`);
@@ -39,6 +39,19 @@ export const commentApi = {
       });
     } catch (error) {
       console.error(`Failed to delete comment #${id}`, error);
+      throw error;
+    }
+  },
+
+  // ✅ SỬA ENDPOINT THÀNH /hide ĐỂ KHỚP VỚI BACKEND
+  toggleHide: async (id) => {
+    try {
+      return await fetchApi(`/comments/${id}/hide`, {
+        method: 'PATCH',
+        ...getAuthHeaders()
+      });
+    } catch (error) {
+      console.error(`Failed to toggle visibility for comment #${id}`, error);
       throw error;
     }
   }

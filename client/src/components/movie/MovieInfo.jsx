@@ -13,7 +13,7 @@ export const MovieInfo = ({ movie }) => {
         <p className="movie-description-text">{movie.description}</p>
       )}
 
-      <div className="movie-specs-list">
+      <div className="movie-specs-list">có 
         {genresList && (
           <div className="movie-spec-item">
             <span className="movie-spec-label">Thể loại</span>

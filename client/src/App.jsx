@@ -15,6 +15,8 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { AuthProvider } from './context/AuthContext';
 import { RandomPage } from './pages/RandomPage';
 import { WatchlistProvider } from './context/WatchlistContext';
+import { CategoriesPage } from './pages/admin/CategoriesPage';
+import { CommentsPage } from './pages/admin/CommentsPage';
 import './index.css';
 
 function App() {
@@ -47,6 +49,8 @@ function App() {
               <Route index element={<DashboardPage />} />
               <Route path="movies" element={<MoviesPage />} />
               <Route path="users" element={<UsersPage />} />
+              <Route path="comments" element={<CommentsPage />} />
+              <Route path="categories" element={<CategoriesPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

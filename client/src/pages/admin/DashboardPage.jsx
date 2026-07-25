@@ -49,6 +49,15 @@ const CHART_COLORS = [
   '#a855f7', '#10b981', '#e11d48', '#84cc16', '#0ea5e9',
 ];
 
+// ===== BỔ SUNG: các mốc kỳ để lọc thống kê, khớp phong cách "Thời gian" trong ảnh mẫu =====
+const PERIOD_OPTIONS = [
+  { value: 'all', label: 'Toàn thời gian' },
+  { value: '7d', label: '7 ngày qua' },
+  { value: '30d', label: '30 ngày qua' },
+  { value: 'this_month', label: 'Tháng này' },
+  { value: 'this_year', label: 'Năm nay' },
+];
+
 export const DashboardPage = () => {
   useDocumentTitle('Bảng Điều Khiển Quản Trị');
   const [stats, setStats] = useState(null);
@@ -56,13 +65,15 @@ export const DashboardPage = () => {
   const [topMovies, setTopMovies] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('all');
   const { isDark } = useTheme();
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [statsData, genreData, topMoviesData, recentUsersData] = await Promise.all([
-          adminApi.getStats(),
+          adminApi.getStats(period === 'all' ? undefined : { period }),
           adminApi.getGenreStats(),
           adminApi.getTopMovies(),
           adminApi.getRecentUsers(),
@@ -85,7 +96,7 @@ export const DashboardPage = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [period]);
 
   if (loading) {
     return <LoadingSpinner text="Đang tải dữ liệu Dashboard..." />;
@@ -163,8 +174,98 @@ export const DashboardPage = () => {
     },
   };
 
+  const handleExport = () => {
+    // TODO: nối API xuất báo cáo thật khi Backend có endpoint tương ứng
+    window.print();
+  };
+
   return (
     <div className="dashboard-page">
+
+      {/* ===== BỔ SUNG: Breadcrumb — vùng 1 trong bố cục mẫu ===== */}
+      <nav
+        aria-label="breadcrumb"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 14,
+          color: isDark ? '#9ca3af' : '#64748b',
+          marginBottom: 16,
+        }}
+      >
+        <span>Trang chủ</span>
+        <span style={{ opacity: 0.6 }}>›</span>
+        <span style={{ color: isDark ? '#fff' : '#1e293b', fontWeight: 600 }}>
+          Bảng điều khiển
+        </span>
+      </nav>
+
+      {/* ===== BỔ SUNG: Toolbar filter + action — vùng 2 trong bố cục mẫu ===== */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 16,
+          padding: '16px 20px',
+          borderRadius: 12,
+          background: isDark ? '#16171d' : '#ffffff',
+          border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <label
+            htmlFor="dashboard-period"
+            style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#9ca3af' : '#64748b' }}
+          >
+            Thời gian
+          </label>
+          <select
+            id="dashboard-period"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 8,
+              border: `1px solid ${isDark ? '#2a2b33' : '#cbd5e1'}`,
+              background: isDark ? '#1c1d24' : '#f8fafc',
+              color: isDark ? '#e5e7eb' : '#1e293b',
+              fontSize: 14,
+              minWidth: 180,
+              cursor: 'pointer',
+            }}
+          >
+            {PERIOD_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        <button
+          type="button"
+          onClick={handleExport}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 18px',
+            borderRadius: 8,
+            border: 'none',
+            background: 'linear-gradient(135deg, #3c50e0, #5b6fe6)',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          📄 Xuất báo cáo
+        </button>
+      </div>
+
       {/* Stats Cards */}
       <div className="admin-stats-grid">
         {STAT_CARDS.map((card) => (
@@ -268,7 +369,7 @@ export const DashboardPage = () => {
         </div>
       )}
 
-      {/* Bảng Người dùng mới nhất */}
+      {/* Bảng Người dùng mới nhất — đúng phong cách bảng trong ảnh mẫu (viền, header, STT) */}
       {recentUsers.length > 0 && (
         <div className="admin-table-wrapper" style={{ marginTop: 32 }}>
           <div className="admin-table-toolbar">
@@ -277,16 +378,16 @@ export const DashboardPage = () => {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th style={{ width: 60 }}>STT</th>
                 <th>Tên tài khoản</th>
                 <th>Email</th>
                 <th>Ngày tạo</th>
               </tr>
             </thead>
             <tbody>
-              {recentUsers.map((u) => (
+              {recentUsers.map((u, idx) => (
                 <tr key={u.id}>
-                  <td>#{u.id}</td>
+                  <td>{idx + 1}</td>
                   <td style={{ fontWeight: 600 }}>{u.username}</td>
                   <td>{u.email}</td>
                   <td>{new Date(u.createdAt).toLocaleDateString('vi-VN')}</td>
@@ -299,4 +400,3 @@ export const DashboardPage = () => {
     </div>
   );
 };
-
