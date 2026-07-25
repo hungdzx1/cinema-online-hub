@@ -57,7 +57,7 @@ export class AdminService {
     const viewResult = await this.movieRepository
       .createQueryBuilder('movie')
       .select('SUM(movie.viewCount)', 'total')
-      .getRawOne();
+      .getRawOne<{ total: string | number }>(); // 👈 Thêm kiểu dữ liệu vào đây
 
     return {
       totalUsers,
@@ -85,7 +85,10 @@ export class AdminService {
       .orderBy('count', 'DESC')
       .getRawMany();
 
-    return stats.map((s) => ({ name: s.name, count: Number(s.count) }));
+    return stats.map((s: { name: string; count: string | number }) => ({
+      name: s.name,
+      count: Number(s.count),
+    }));
   }
 
   // Top phim xem nhiều nhất
@@ -119,4 +122,3 @@ export class AdminService {
     });
   }
 }
-

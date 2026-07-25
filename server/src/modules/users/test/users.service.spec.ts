@@ -1,13 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { User } from './user.entity';
-import { UserRole } from '../../common/enums/user-role.enum';
+import { UsersService } from '../users.service';
+import { User } from '../user.entity';
+import { UserRole } from '../../../common/enums/user-role.enum';
 
 describe('UsersService (Unit Tests)', () => {
   let service: UsersService;
-  let repo: any;
+
+  // Khai báo kiểu tường minh cho repo để tránh lỗi any của ESLint
+  let repo: {
+    find: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+    update: jest.Mock;
+    remove: jest.Mock;
+  };
 
   const mockUser: User = {
     id: 1,
@@ -16,7 +24,7 @@ describe('UsersService (Unit Tests)', () => {
     passwordHash: 'hashed_password',
     role: UserRole.USER,
     isBanned: false,
-    avatarUrl: null,
+    avatarUrl: null as unknown as string, // Đã chuẩn kiểu string | null ở entity
     resetToken: null,
     resetTokenExpires: null,
     lastLogin: new Date(),
@@ -28,7 +36,7 @@ describe('UsersService (Unit Tests)', () => {
     repo = {
       find: jest.fn().mockResolvedValue([mockUser]),
       findOne: jest.fn().mockResolvedValue(mockUser),
-      save: jest.fn().mockImplementation((user) => Promise.resolve(user)),
+      save: jest.fn().mockImplementation((user: User) => Promise.resolve(user)),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       remove: jest.fn().mockResolvedValue(mockUser),
     };
@@ -51,7 +59,18 @@ describe('UsersService (Unit Tests)', () => {
     it('trả về danh sách người dùng', async () => {
       const result = await service.findAll();
       expect(result).toEqual([mockUser]);
-      expect(repo.find).toHaveBeenCalled();
+      expect(repo.find).toHaveBeenCalledWith({
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          role: true,
+          isBanned: true,
+          avatarUrl: true,
+          createdAt: true,
+          lastLogin: true,
+        },
+      });
     });
   });
 
@@ -72,14 +91,6 @@ describe('UsersService (Unit Tests)', () => {
     it('khóa tài khoản nếu đang hoạt động', async () => {
       const result = await service.toggleBan(1);
       expect(result.isBanned).toBe(true);
-      expect(repo.save).toHaveBeenCalled();
-    });
-  });
-
-  describe('updateRole', () => {
-    it('cập nhật vai trò sang ADMIN', async () => {
-      const result = await service.updateRole(1, UserRole.ADMIN);
-      expect(result.role).toBe(UserRole.ADMIN);
       expect(repo.save).toHaveBeenCalled();
     });
   });

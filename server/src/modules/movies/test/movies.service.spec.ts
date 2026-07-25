@@ -1,14 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { MoviesService } from './movies.service';
-import { Movie } from './movies.entity';
-import { Episode } from '../episodes/episode.entity';
+import { MoviesService } from '../movies.service';
+import { Movie } from '../movies.entity';
+import { Episode } from '../../episodes/episode.entity';
 
 describe('MoviesService (Unit Tests)', () => {
   let service: MoviesService;
-  let movieRepo: any;
-  let episodeRepo: any;
+
+  let movieRepo: {
+    create: jest.Mock;
+    save: jest.Mock;
+    find: jest.Mock;
+    findOne: jest.Mock;
+    increment: jest.Mock;
+    remove: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+
+  let episodeRepo: {
+    find: jest.Mock;
+  };
 
   const mockMovie: Partial<Movie> = {
     id: 1,
@@ -41,8 +53,12 @@ describe('MoviesService (Unit Tests)', () => {
     };
 
     movieRepo = {
-      create: jest.fn().mockImplementation((dto) => dto),
-      save: jest.fn().mockImplementation((movie) => Promise.resolve({ id: 1, ...movie })),
+      create: jest.fn().mockImplementation((dto) => ({ ...dto }) as Movie),
+      save: jest
+        .fn()
+        .mockImplementation((movie) =>
+          Promise.resolve({ id: 1, ...movie } as Movie),
+        ),
       find: jest.fn().mockResolvedValue([mockMovie]),
       findOne: jest.fn().mockResolvedValue(mockMovie),
       increment: jest.fn().mockResolvedValue({ affected: 1 }),
@@ -100,14 +116,20 @@ describe('MoviesService (Unit Tests)', () => {
     it('trả về phim và tự động tăng viewCount', async () => {
       const result = await service.findBySlug('lat-mat-7-mot-dieu-uoc');
       expect(result).toEqual(mockMovie);
-      expect(movieRepo.increment).toHaveBeenCalledWith({ id: 1 }, 'viewCount', 1);
+      expect(movieRepo.increment).toHaveBeenCalledWith(
+        { id: 1 },
+        'viewCount',
+        1,
+      );
     });
   });
 
   describe('remove', () => {
     it('xóa phim thành công', async () => {
       const result = await service.remove(1);
-      expect(result).toEqual({ message: 'Đã xóa phim "Lật Mặt 7: Một Điều Ước" thành công' });
+      expect(result).toEqual({
+        message: 'Đã xóa phim "Lật Mặt 7: Một Điều Ước" thành công',
+      });
       expect(movieRepo.remove).toHaveBeenCalledWith(mockMovie);
     });
   });

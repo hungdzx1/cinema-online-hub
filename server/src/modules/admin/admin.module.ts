@@ -16,4 +16,3 @@ import { Genre } from '../genres/genre.entity';
   providers: [AdminService],
 })
 export class AdminModule {}
-

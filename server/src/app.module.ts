@@ -63,9 +63,6 @@ import { AdminModule } from './modules/admin/admin.module';
     MailModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-  ],
-
+  providers: [AppService],
 })
 export class AppModule {}

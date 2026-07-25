@@ -2,37 +2,55 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import { MailService } from '../../mail/mail.service';
-import { User } from '../users/user.entity';
+import { AuthService } from '../auth.service';
+import { UsersService } from '../../users/users.service';
+import { MailService } from '../../../mail/mail.service';
+import { User } from '../../users/user.entity';
+import { UserRole } from '../../../common/enums/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 
-jest.mock('bcryptjs', () => ({
-  hash: jest.fn().mockResolvedValue('hashed_password'),
-  compare: jest.fn(),
-}));
+// Mock thư viện bcryptjs
+jest.mock('bcryptjs');
 
 describe('AuthService (Unit Tests)', () => {
   let service: AuthService;
-  let userRepository: any;
-  let usersService: any;
-  let jwtService: any;
-  let mailService: any;
+
+  // ✅ KHAI BÁO KIỂU DỮ LIỆU TƯỜNG MINH ĐỂ KHÔNG BỊ BÁO ĐỎ
+  let userRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+    findOne: jest.Mock;
+  };
+
+  let usersService: {
+    findByEmail: jest.Mock;
+    findByUsername: jest.Mock;
+    findById: jest.Mock;
+    updateLastLogin: jest.Mock;
+  };
+
+  let jwtService: { sign: jest.Mock };
+  let mailService: { sendResetPasswordEmail: jest.Mock };
 
   const mockUser = {
     id: 1,
     username: 'testuser',
     email: 'test@example.com',
     passwordHash: 'hashed_password',
-    role: 'USER',
+    role: UserRole.USER,
     isBanned: false,
   };
 
   beforeEach(async () => {
+    // Ép kiểu bcrypt để TypeScript nhận diện đúng các hàm mock
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
     userRepository = {
-      create: jest.fn().mockImplementation((dto) => ({ ...dto })),
-      save: jest.fn().mockImplementation((user) => {
+      create: jest
+        .fn()
+        .mockImplementation((dto: Partial<User>) => ({ ...dto }) as User),
+      save: jest.fn().mockImplementation((user: User) => {
         user.id = 1;
         return Promise.resolve(user);
       }),
@@ -76,7 +94,11 @@ describe('AuthService (Unit Tests)', () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.findByUsername.mockResolvedValue(null);
 
-      const dto = { username: 'newuser', email: 'new@example.com', password: 'Password123!' };
+      const dto = {
+        username: 'newuser',
+        email: 'new@example.com',
+        password: 'Password123!',
+      };
       const result = await service.register(dto);
 
       expect(usersService.findByEmail).toHaveBeenCalledWith(dto.email);
@@ -87,7 +109,11 @@ describe('AuthService (Unit Tests)', () => {
 
     it('báo lỗi ConflictException nếu Email đã tồn tại', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
-      const dto = { username: 'newuser', email: 'test@example.com', password: 'Password123!' };
+      const dto = {
+        username: 'newuser',
+        email: 'test@example.com',
+        password: 'Password123!',
+      };
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
     });
@@ -95,7 +121,11 @@ describe('AuthService (Unit Tests)', () => {
     it('báo lỗi ConflictException nếu Username đã tồn tại', async () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.findByUsername.mockResolvedValue(mockUser);
-      const dto = { username: 'testuser', email: 'new@example.com', password: 'Password123!' };
+      const dto = {
+        username: 'testuser',
+        email: 'new@example.com',
+        password: 'Password123!',
+      };
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
     });
@@ -104,9 +134,13 @@ describe('AuthService (Unit Tests)', () => {
   describe('login', () => {
     it('đăng nhập thành công và trả về accessToken', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
+      // Đã mock sẵn true ở beforeEach, nhưng có thể gán lại cho rõ ràng
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const dto = { email: 'test@example.com', password: 'Password123!' };
+      const dto = {
+        email: 'test@example.com',
+        password: 'Password123!',
+      };
       const result = await service.login(dto);
 
       expect(result).toHaveProperty('accessToken', 'mock.jwt.token');
@@ -122,7 +156,10 @@ describe('AuthService (Unit Tests)', () => {
     });
 
     it('báo lỗi UnauthorizedException nếu tài khoản bị khóa (isBanned = true)', async () => {
-      usersService.findByEmail.mockResolvedValue({ ...mockUser, isBanned: true });
+      usersService.findByEmail.mockResolvedValue({
+        ...mockUser,
+        isBanned: true,
+      });
       const dto = { email: 'test@example.com', password: 'Password123!' };
 
       await expect(service.login(dto)).rejects.toThrow(UnauthorizedException);

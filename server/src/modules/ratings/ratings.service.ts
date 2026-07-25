@@ -16,16 +16,21 @@ export class RatingsService {
 
   // Cập nhật lại điểm trung bình và lượt đánh giá của phim
   private async updateMovieRatingStats(movieId: number): Promise<void> {
+    // Thêm cặp ngoặc đơn bao quanh lệnh await và dùng "as" để ép kiểu
     const stats = await this.ratingRepository
       .createQueryBuilder('r')
       .select('AVG(r.score)', 'avgRating')
       .addSelect('COUNT(r.userId)', 'ratingCount')
       .where('r.movieId = :movieId', { movieId })
-      .getRawOne();
-
-    const rawAvg = parseFloat(stats?.avgRating) || 0;
+      // Đưa kiểu dữ liệu vào trong dấu < > của hàm getRawOne
+      .getRawOne<{
+        avgRating: string | number;
+        ratingCount: string | number;
+      }>();
+    // Các đoạn tính toán bên dưới giữ nguyên
+    const rawAvg = parseFloat(String(stats?.avgRating || 0));
     const avgRating = Math.round(rawAvg * 10) / 10;
-    const ratingCount = parseInt(stats?.ratingCount, 10) || 0;
+    const ratingCount = parseInt(String(stats?.ratingCount || 0), 10);
 
     await this.movieRepository.update(movieId, {
       avgRating,

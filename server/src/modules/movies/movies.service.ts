@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Movie } from './movies.entity';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
@@ -51,9 +51,9 @@ export class MoviesService {
   }
   // Chi tiết phim theo slug (public) — tăng lượt xem
   async findBySlug(slug: string): Promise<Movie> {
-    const movie = await this.movieRepository.findOne({ 
+    const movie = await this.movieRepository.findOne({
       where: { slug },
-      relations: { genres: true, countries: true }
+      relations: { genres: true, countries: true },
     });
     if (!movie) {
       this.logger.warn(`Không tìm thấy phim slug=${slug}`);
@@ -173,8 +173,9 @@ export class MoviesService {
 
     if (movies.length === 0) {
       this.logger.warn(
-        `Random nâng cao: không có phim thỏa điều kiện (type=${type}, status=${status}, genreIds=${genreIds})`,
+        `Random nâng cao: không có phim thỏa điều kiện (type=${type}, status=${status}, genreIds=${genreIds?.join(', ') || 'không có'})`,
       );
+      throw new NotFoundException('Không có phim thỏa điều kiện để random');
     }
 
     return this.sortByCriteria(movies, sortBy);
@@ -210,7 +211,7 @@ export class MoviesService {
       limit = 20,
     } = filters;
 
-    const applyFilters = (queryBuilder) => {
+    const applyFilters = (queryBuilder: SelectQueryBuilder<Movie>) => {
       queryBuilder.where('movie.isVisible = :visible', { visible: true });
 
       if (keyword) {
@@ -229,26 +230,39 @@ export class MoviesService {
       }
 
       if (releaseYear) {
-        queryBuilder.andWhere('movie.releaseYear = :releaseYear', { releaseYear });
+        queryBuilder.andWhere('movie.releaseYear = :releaseYear', {
+          releaseYear,
+        });
       }
 
       if (countryId || country) {
         const countryVal = country || countryId;
         if (!isNaN(Number(countryVal))) {
-          queryBuilder.innerJoin('movie.countries', 'country', 'country.id = :cId', {
-            cId: Number(countryVal),
-          });
+          queryBuilder.innerJoin(
+            'movie.countries',
+            'country',
+            'country.id = :cId',
+            {
+              cId: Number(countryVal),
+            },
+          );
         } else {
-          queryBuilder.innerJoin('movie.countries', 'country', 'LOWER(country.slug) = LOWER(:cSlug)', {
-            cSlug: String(countryVal).toLowerCase(),
-          });
+          queryBuilder.innerJoin(
+            'movie.countries',
+            'country',
+            'LOWER(country.slug) = LOWER(:cSlug)',
+            {
+              cSlug: String(countryVal).toLowerCase(),
+            },
+          );
         }
       }
 
       if (genreIds && genreIds.length > 0) {
-        queryBuilder.innerJoin('movie.genres', 'genre', 'genre.id IN (:...genreIds)', {
-          genreIds,
-        })
+        queryBuilder
+          .innerJoin('movie.genres', 'genre', 'genre.id IN (:...genreIds)', {
+            genreIds,
+          })
           .groupBy('movie.id')
           .having('COUNT(DISTINCT genre.id) = :genreCount', {
             genreCount: genreIds.length,

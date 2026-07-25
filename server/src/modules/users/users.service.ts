@@ -69,4 +69,3 @@ export class UsersService {
     await this.userRepository.remove(user);
   }
 }
-

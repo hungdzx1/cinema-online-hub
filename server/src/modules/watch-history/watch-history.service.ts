@@ -9,7 +9,7 @@ export class WatchHistoryService {
   constructor(
     @InjectRepository(WatchHistory)
     private historyRepository: Repository<WatchHistory>,
-  ) { }
+  ) {}
 
   async saveProgress(
     userId: number,
