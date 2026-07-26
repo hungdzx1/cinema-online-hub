@@ -1,6 +1,6 @@
-
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { AIAssistant } from '../common/AIAssistant';
 
 export const MainLayout = ({ children }) => {
   return (
@@ -10,6 +10,7 @@ export const MainLayout = ({ children }) => {
         {children}
       </main>
       <Footer />
+      <AIAssistant />
     </div>
   );
 };

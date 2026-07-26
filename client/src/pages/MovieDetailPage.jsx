@@ -132,6 +132,8 @@ export const MovieDetailPage = () => {
               currentEpisodeNumber={activeEpisodeNumber}
               totalEpisodes={movie.totalEpisodes || episodes.length}
               onSelectEpisode={handleSelectEpisode}
+              movieId={movie.id}
+              episodeId={activeEpisode?.id}
             />
           </div>
         </section>

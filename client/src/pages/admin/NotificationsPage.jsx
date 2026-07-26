@@ -1,515 +1,562 @@
-import { useState, useEffect } from 'react';
-import { notificationApi } from '../../services/notificationApi';
-import { userApi } from '../../services/userApi';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
-import '../../components/admin/admin.css';
+import { notificationApi } from '../../services/notificationApi';
+import {
+  errorReportApi,
+  ERROR_TYPES,
+  REPORT_STATUSES,
+} from '../../services/errorReportApi';
+import './admin-notifications.css';
 
-const TYPE_OPTIONS = [
-  { value: 'system', label: '📢 Hệ thống', color: '#3b82f6' },
-  { value: 'new_episode', label: '🎬 Tập mới', color: '#10b981' },
+const NOTI_TYPES = [
+  { value: 'system',     label: 'Hệ thống' },
+  { value: 'new_episode', label: 'Tập phim mới' },
 ];
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleString('vi-VN', {
+// Định dạng thời gian tương đối: "5 phút trước"
+const formatRelative = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+};
+
+const formatDate = (iso) => {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('vi-VN', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
 };
 
-export const NotificationsPage = () => {
-  useDocumentTitle('Quản Lý Thông Báo');
-  const { isDark } = useTheme();
+export const AdminNotificationsPage = () => {
+  const { user } = useAuth();
   const toast = useToast();
 
-  // ===== State =====
-  const [notifications, setNotifications] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all' | 'unread' | 'read'
-  const [searchTerm, setSearchTerm] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeTab, setActiveTab] = useState('noti');
 
-  // Form tạo thông báo
-  const [showForm, setShowForm] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [form, setForm] = useState({
+  // ===== Notifications state =====
+  const [notiForm, setNotiForm] = useState({
     userId: '',
     title: '',
     content: '',
     type: 'system',
     linkUrl: '',
   });
+  const [sendingNoti, setSendingNoti] = useState(false);
+  const [myNotis, setMyNotis] = useState([]);
+  const [loadingNotis, setLoadingNotis] = useState(false);
 
-  // ===== Fetch data =====
-  const fetchNotifications = async () => {
+  // ===== Error reports state =====
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  // ===== Load notifications (của admin đang login) =====
+  const loadNotis = useCallback(async () => {
+    setLoadingNotis(true);
     try {
-      setLoading(true);
-      const data = await notificationApi.getAll();
-      setNotifications(Array.isArray(data) ? data : []);
+      const data = await notificationApi.getMine();
+      setMyNotis(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load notifications:', err);
-      setNotifications([]);
+      console.error('Load notifications failed:', err);
+      toast.error('Không tải được danh sách thông báo.');
     } finally {
-      setLoading(false);
+      setLoadingNotis(false);
     }
-  };
+  }, [toast]);
 
-  const fetchUsers = async () => {
+  // ===== Load error reports =====
+  const loadReports = useCallback(async () => {
+    setLoadingReports(true);
     try {
-      const data = await userApi.getAll();
-      setUsers(Array.isArray(data) ? data : []);
+      const data = await errorReportApi.getAll();
+      setReports(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error('Load error reports failed:', err);
+      toast.error('Không tải được danh sách báo lỗi.');
+    } finally {
+      setLoadingReports(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    fetchNotifications();
-    fetchUsers();
-  }, []);
+    loadNotis();
+    loadReports();
+  }, [loadNotis, loadReports]);
 
-  // ===== Filtered list =====
-  const filtered = notifications.filter((n) => {
-    if (filter === 'unread' && n.isRead) return false;
-    if (filter === 'read' && !n.isRead) return false;
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      return (
-        n.title.toLowerCase().includes(term) ||
-        (n.content || '').toLowerCase().includes(term)
-      );
-    }
-    return true;
-  });
+  // ===== Handlers: Notification =====
+  const handleSendNoti = async (e) => {
+    e.preventDefault();
+    if (sendingNoti) return;
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  // ===== Handlers =====
-  const handleMarkAsRead = async (id) => {
-    try {
-      await notificationApi.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
-      toast.success('Đã đánh dấu đã đọc');
-    } catch {
-      toast.error('Thao tác thất bại');
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationApi.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      toast.success('Đã đánh dấu tất cả đã đọc');
-    } catch {
-      toast.error('Thao tác thất bại');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await notificationApi.delete(deleteTarget.id);
-      setNotifications((prev) => prev.filter((n) => n.id !== deleteTarget.id));
-      toast.success('Đã xóa thông báo');
-      setDeleteTarget(null);
-    } catch {
-      toast.error('Xóa thất bại');
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!form.userId) {
-      toast.warning('Vui lòng chọn người nhận');
+    const userId = Number(notiForm.userId);
+    if (!userId || userId < 1) {
+      toast.warning('Vui lòng nhập ID người nhận hợp lệ.');
       return;
     }
-    if (!form.title.trim()) {
-      toast.warning('Tiêu đề không được để trống');
+    if (!notiForm.title.trim()) {
+      toast.warning('Vui lòng nhập tiêu đề thông báo.');
       return;
     }
-    setSending(true);
+
+    setSendingNoti(true);
     try {
-      const payload = {
-        userId: Number(form.userId),
-        title: form.title.trim(),
-        content: form.content.trim() || undefined,
-        type: form.type,
-        linkUrl: form.linkUrl.trim() || undefined,
-      };
-      await notificationApi.create(payload);
-      toast.success(`Đã gửi thông báo cho user #${form.userId}`);
-      setForm({ userId: '', title: '', content: '', type: 'system', linkUrl: '' });
-      setShowForm(false);
-      fetchNotifications();
+      await notificationApi.create({
+        userId,
+        title: notiForm.title.trim(),
+        content: notiForm.content.trim() || undefined,
+        type: notiForm.type,
+        linkUrl: notiForm.linkUrl.trim() || undefined,
+      });
+      toast.success(`Đã gửi thông báo đến user #${userId}.`);
+      setNotiForm({
+        userId: '',
+        title: '',
+        content: '',
+        type: 'system',
+        linkUrl: '',
+      });
+      // Load lại danh sách nếu user nhận là chính admin
+      loadNotis();
     } catch (err) {
-      toast.error('Gửi thông báo thất bại');
-      console.error(err);
+      console.error('Send notification failed:', err);
+      const msg =
+        err?.response?.data?.message ||
+        'Gửi thông báo thất bại. Kiểm tra ID người dùng.';
+      toast.error(typeof msg === 'string' ? msg : 'Gửi thông báo thất bại.');
     } finally {
-      setSending(false);
+      setSendingNoti(false);
     }
   };
 
-  // ===== RENDER =====
-  if (loading) {
-    return <LoadingSpinner text="Đang tải thông báo..." />;
-  }
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setMyNotis((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success('Đã đánh dấu tất cả là đã đọc.');
+    } catch (err) {
+      console.error('Mark all read failed:', err);
+      toast.error('Không thể đánh dấu đã đọc.');
+    }
+  };
+
+  const handleDeleteNoti = async (id) => {
+    try {
+      await notificationApi.delete(id);
+      setMyNotis((prev) => prev.filter((n) => n.id !== id));
+      toast.success('Đã xóa thông báo.');
+    } catch (err) {
+      console.error('Delete notification failed:', err);
+      toast.error('Xóa thông báo thất bại.');
+    }
+  };
+
+  // ===== Handlers: Error Reports =====
+  const handleUpdateStatus = async (id, status) => {
+    try {
+      await errorReportApi.updateStatus(id, status);
+      setReports((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r)),
+      );
+      const label = REPORT_STATUSES.find((s) => s.value === status)?.label || status;
+      toast.success(`Đã chuyển báo lỗi #${id} → "${label}".`);
+    } catch (err) {
+      console.error('Update status failed:', err);
+      toast.error('Cập nhật trạng thái thất bại.');
+    }
+  };
+
+  const handleDeleteReport = async () => {
+    if (!confirmDelete) return;
+    try {
+      await errorReportApi.delete(confirmDelete);
+      setReports((prev) => prev.filter((r) => r.id !== confirmDelete));
+      toast.success('Đã xóa báo lỗi.');
+    } catch (err) {
+      console.error('Delete report failed:', err);
+      toast.error('Xóa báo lỗi thất bại.');
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  // ===== Stats for error reports =====
+  const stats = useMemo(() => {
+    const total = reports.length;
+    const pending = reports.filter((r) => r.status === 'pending').length;
+    const resolved = reports.filter((r) => r.status === 'resolved').length;
+    const ignored = reports.filter((r) => r.status === 'ignored').length;
+    return { total, pending, resolved, ignored };
+  }, [reports]);
+
+  // ===== Filtered reports =====
+  const filteredReports = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return reports.filter((r) => {
+      if (filterType !== 'all' && r.errorType !== filterType) return false;
+      if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+      if (q) {
+        const hay = `${r.id} ${r.description || ''} ${r.movieId} ${r.episodeId || ''} ${r.userId}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [reports, search, filterType, filterStatus]);
+
+  const getErrorType = (val) => ERROR_TYPES.find((t) => t.value === val);
+  const getStatus = (val) => REPORT_STATUSES.find((s) => s.value === val);
 
   return (
-    <div className="dashboard-page">
-      {/* Breadcrumb */}
-      <nav
-        aria-label="breadcrumb"
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 14, color: isDark ? '#9ca3af' : '#64748b', marginBottom: 16,
-        }}
-      >
-        <span>Admin</span>
-        <span style={{ opacity: 0.6 }}>›</span>
-        <span style={{ color: isDark ? '#fff' : '#1e293b', fontWeight: 600 }}>
-          Quản lý thông báo
-        </span>
-      </nav>
-
-      {/* Toolbar */}
-      <div
-        style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
-          padding: '14px 20px', borderRadius: 12,
-          background: isDark ? '#16171d' : '#ffffff',
-          border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
-          marginBottom: 24,
-        }}
-      >
-        {/* Search */}
-        <div style={{ position: 'relative', width: 260 }}>
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            style={{
-              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-              color: isDark ? '#8a99af' : '#94a3b8', pointerEvents: 'none',
-            }}
-          >
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Tìm kiếm thông báo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%', padding: '9px 14px 9px 36px', borderRadius: 8,
-              border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
-              background: isDark ? '#1c1d24' : '#f8fafc',
-              color: isDark ? '#e5e7eb' : '#1e293b', fontSize: 13.5, outline: 'none',
-            }}
-          />
-        </div>
-
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[
-            { value: 'all', label: `Tất cả (${notifications.length})` },
-            { value: 'unread', label: `Chưa đọc (${unreadCount})` },
-            { value: 'read', label: `Đã đọc (${notifications.length - unreadCount})` },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              style={{
-                padding: '7px 14px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
-                cursor: 'pointer',
-                background: filter === tab.value
-                  ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                  : isDark ? '#1c1d24' : '#f1f5f9',
-                color: filter === tab.value ? '#fff' : isDark ? '#9ca3af' : '#64748b',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Mark all read */}
-        {unreadCount > 0 && (
-          <button
-            onClick={handleMarkAllAsRead}
-            style={{
-              padding: '9px 16px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', background: isDark ? '#1c1d24' : '#f1f5f9',
-              color: isDark ? '#60a5fa' : '#3b82f6',
-            }}
-          >
-            ✓ Đọc tất cả
-          </button>
-        )}
-
-        {/* Create button */}
+    <div className="admin-noti-page">
+      {/* Tabs */}
+      <div className="admin-noti-tabs">
         <button
-          onClick={() => setShowForm((v) => !v)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '9px 18px', borderRadius: 8, border: 'none',
-            background: showForm
-              ? (isDark ? '#374151' : '#e2e8f0')
-              : 'linear-gradient(135deg, #3c50e0, #5b6fe6)',
-            color: showForm ? (isDark ? '#e5e7eb' : '#475569') : '#fff',
-            fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
-          }}
+          className={`admin-noti-tab ${activeTab === 'noti' ? 'active' : ''}`}
+          onClick={() => setActiveTab('noti')}
         >
-          {showForm ? '✕ Đóng' : '➕ Gửi thông báo'}
+          🔔 Thông báo
+        </button>
+        <button
+          className={`admin-noti-tab ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          🚩 Báo lỗi phim
+          {stats.pending > 0 && (
+            <span className="admin-noti-tab-badge">{stats.pending}</span>
+          )}
         </button>
       </div>
 
-      {/* ===== FORM TẠO THÔNG BÁO ===== */}
-      {showForm && (
-        <div
-          style={{
-            padding: 24, borderRadius: 12, marginBottom: 24,
-            background: isDark ? '#16171d' : '#ffffff',
-            border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
-          }}
-        >
-          <h3 style={{
-            margin: '0 0 20px', fontSize: 16, fontWeight: 700,
-            color: isDark ? '#fff' : '#1e293b',
-          }}>
-            📨 Gửi thông báo mới
-          </h3>
+      {/* ===== Tab 1: Notifications ===== */}
+      {activeTab === 'noti' && (
+        <div className="admin-noti-grid">
+          {/* Left: send form */}
+          <div className="admin-noti-card">
+            <h3 className="admin-noti-card-title">Gửi thông báo mới</h3>
+            <form className="admin-noti-form" onSubmit={handleSendNoti}>
+              <div className="admin-noti-field">
+                <label>ID người nhận *</label>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="VD: 5"
+                  value={notiForm.userId}
+                  onChange={(e) => setNotiForm({ ...notiForm, userId: e.target.value })}
+                  required
+                />
+              </div>
 
-          <div className="admin-form-grid">
-            {/* Người nhận */}
-            <div className="admin-form-group">
-              <label className="admin-form-label">Người nhận <span className="required">*</span></label>
-              <select
-                className="admin-form-select"
-                value={form.userId}
-                onChange={(e) => setForm({ ...form, userId: e.target.value })}
+              <div className="admin-noti-field">
+                <label>Tiêu đề *</label>
+                <input
+                  type="text"
+                  maxLength={255}
+                  placeholder="VD: Phim mới đã được cập nhật"
+                  value={notiForm.title}
+                  onChange={(e) => setNotiForm({ ...notiForm, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="admin-noti-field">
+                <label>Loại</label>
+                <select
+                  value={notiForm.type}
+                  onChange={(e) => setNotiForm({ ...notiForm, type: e.target.value })}
+                >
+                  {NOTI_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="admin-noti-field">
+                <label>Nội dung</label>
+                <textarea
+                  rows={4}
+                  maxLength={1000}
+                  placeholder="Mô tả chi tiết thông báo..."
+                  value={notiForm.content}
+                  onChange={(e) => setNotiForm({ ...notiForm, content: e.target.value })}
+                />
+              </div>
+
+              <div className="admin-noti-field">
+                <label>Link (nếu có)</label>
+                <input
+                  type="text"
+                  maxLength={500}
+                  placeholder="VD: /movie/ten-phim"
+                  value={notiForm.linkUrl}
+                  onChange={(e) => setNotiForm({ ...notiForm, linkUrl: e.target.value })}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="admin-noti-submit"
+                disabled={sendingNoti}
               >
-                <option value="">— Chọn user —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    #{u.id} — {u.username} ({u.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Loại */}
-            <div className="admin-form-group">
-              <label className="admin-form-label">Loại thông báo</label>
-              <select
-                className="admin-form-select"
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
-              >
-                {TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Tiêu đề */}
-            <div className="admin-form-group full-width">
-              <label className="admin-form-label">Tiêu đề <span className="required">*</span></label>
-              <input
-                className="admin-form-input"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="VD: Hệ thống bảo trì lúc 23:00"
-                maxLength={255}
-              />
-            </div>
-
-            {/* Nội dung */}
-            <div className="admin-form-group full-width">
-              <label className="admin-form-label">Nội dung (tùy chọn)</label>
-              <textarea
-                className="admin-form-textarea"
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                placeholder="Mô tả chi tiết thông báo..."
-                rows={3}
-              />
-            </div>
-
-            {/* Link URL */}
-            <div className="admin-form-group full-width">
-              <label className="admin-form-label">Link đính kèm (tùy chọn)</label>
-              <input
-                className="admin-form-input"
-                value={form.linkUrl}
-                onChange={(e) => setForm({ ...form, linkUrl: e.target.value })}
-                placeholder="VD: /movie/one-piece"
-                maxLength={500}
-              />
-            </div>
+                {sendingNoti ? 'Đang gửi...' : 'Gửi thông báo'}
+              </button>
+            </form>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-            <button className="admin-btn-secondary" onClick={() => setShowForm(false)}>Hủy</button>
-            <button className="admin-btn-primary" onClick={handleCreate} disabled={sending}>
-              {sending ? 'Đang gửi...' : '🚀 Gửi thông báo'}
-            </button>
+          {/* Right: list of own notifications */}
+          <div className="admin-noti-card">
+            <div className="admin-noti-card-header">
+              <h3 className="admin-noti-card-title">
+                Thông báo của bạn
+                <span className="admin-noti-count">{myNotis.length}</span>
+              </h3>
+              {myNotis.length > 0 && (
+                <button
+                  className="admin-noti-markall"
+                  onClick={handleMarkAllRead}
+                >
+                  Đánh dấu đã đọc
+                </button>
+              )}
+            </div>
+
+            {loadingNotis ? (
+              <div className="admin-noti-empty">Đang tải...</div>
+            ) : myNotis.length === 0 ? (
+              <div className="admin-noti-empty">Chưa có thông báo nào.</div>
+            ) : (
+              <ul className="admin-noti-list">
+                {myNotis.map((n) => (
+                  <li
+                    key={n.id}
+                    className={`admin-noti-item ${!n.isRead ? 'unread' : ''}`}
+                  >
+                    <div className="admin-noti-item-top">
+                      <span className="admin-noti-item-title">{n.title}</span>
+                      <button
+                        className="admin-noti-item-del"
+                        onClick={() => handleDeleteNoti(n.id)}
+                        title="Xóa"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {n.content && (
+                      <p className="admin-noti-item-content">{n.content}</p>
+                    )}
+                    <div className="admin-noti-item-meta">
+                      <span className="admin-noti-item-type">
+                        {NOTI_TYPES.find((t) => t.value === n.type)?.label || n.type}
+                      </span>
+                      <span>{formatRelative(n.createdAt)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}
 
-      {/* ===== DANH SÁCH THÔNG BÁO ===== */}
-      <div
-        style={{
-          borderRadius: 12, overflow: 'hidden',
-          background: isDark ? '#16171d' : '#ffffff',
-          border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
-        }}
-      >
-        {filtered.length === 0 ? (
-          <div style={{
-            padding: '48px 20px', textAlign: 'center',
-            color: isDark ? '#6b7280' : '#94a3b8', fontSize: 14,
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
-            {searchTerm
-              ? `Không tìm thấy thông báo với "${searchTerm}"`
-              : filter === 'unread'
-                ? 'Không có thông báo chưa đọc'
-                : 'Chưa có thông báo nào'}
+      {/* ===== Tab 2: Error Reports ===== */}
+      {activeTab === 'reports' && (
+        <div className="admin-reports-wrap">
+          {/* Stats */}
+          <div className="admin-reports-stats">
+            <button
+              className={`admin-stat-card ${filterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => setFilterStatus(filterStatus === 'all' ? 'all' : 'all')}
+            >
+              <span className="admin-stat-num">{stats.total}</span>
+              <span className="admin-stat-label">Tổng</span>
+            </button>
+            <button
+              className={`admin-stat-card pending ${filterStatus === 'pending' ? 'active' : ''}`}
+              onClick={() => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending')}
+            >
+              <span className="admin-stat-num">{stats.pending}</span>
+              <span className="admin-stat-label">Chờ xử lý</span>
+            </button>
+            <button
+              className={`admin-stat-card resolved ${filterStatus === 'resolved' ? 'active' : ''}`}
+              onClick={() => setFilterStatus(filterStatus === 'resolved' ? 'all' : 'resolved')}
+            >
+              <span className="admin-stat-num">{stats.resolved}</span>
+              <span className="admin-stat-label">Đã xử lý</span>
+            </button>
+            <button
+              className={`admin-stat-card ignored ${filterStatus === 'ignored' ? 'active' : ''}`}
+              onClick={() => setFilterStatus(filterStatus === 'ignored' ? 'all' : 'ignored')}
+            >
+              <span className="admin-stat-num">{stats.ignored}</span>
+              <span className="admin-stat-label">Đã bỏ qua</span>
+            </button>
           </div>
-        ) : (
-          <div>
-            {filtered.map((noti, idx) => (
-              <div
-                key={noti.id}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 14,
-                  padding: '16px 20px',
-                  borderBottom: idx < filtered.length - 1
-                    ? `1px solid ${isDark ? '#1f2028' : '#f1f5f9'}`
-                    : 'none',
-                  background: noti.isRead
-                    ? 'transparent'
-                    : isDark ? 'rgba(99, 102, 241, 0.06)' : 'rgba(99, 102, 241, 0.04)',
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                {/* Icon type */}
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18,
-                  background: noti.type === 'new_episode'
-                    ? (isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.1)')
-                    : (isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.1)'),
-                }}>
-                  {noti.type === 'new_episode' ? '🎬' : '📢'}
-                </div>
 
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{
-                      fontSize: 14, fontWeight: noti.isRead ? 500 : 700,
-                      color: isDark ? '#e5e7eb' : '#1e293b',
-                    }}>
-                      {noti.title}
-                    </span>
-                    {!noti.isRead && (
-                      <span style={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        background: '#6366f1', flexShrink: 0,
-                      }} />
-                    )}
-                    <span style={{
-                      fontSize: 11, padding: '2px 8px', borderRadius: 4,
-                      fontWeight: 600,
-                      background: noti.type === 'new_episode'
-                        ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.12)')
-                        : (isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.12)'),
-                      color: noti.type === 'new_episode' ? '#10b981' : '#3b82f6',
-                    }}>
-                      {noti.type === 'new_episode' ? 'Tập mới' : 'Hệ thống'}
-                    </span>
-                  </div>
+          {/* Toolbar */}
+          <div className="admin-reports-toolbar">
+            <input
+              type="text"
+              className="admin-reports-search"
+              placeholder="Tìm theo mô tả, ID phim, ID user..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">Tất cả loại lỗi</option>
+              {ERROR_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.icon} {t.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Tất cả trạng thái</option>
+              {REPORT_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            <button
+              className="admin-reports-refresh"
+              onClick={loadReports}
+              disabled={loadingReports}
+            >
+              {loadingReports ? 'Đang tải...' : '↻ Làm mới'}
+            </button>
+          </div>
 
-                  {noti.content && (
-                    <div style={{
-                      fontSize: 13, color: isDark ? '#9ca3af' : '#64748b',
-                      lineHeight: 1.5, marginBottom: 4,
-                    }}>
-                      {noti.content}
-                    </div>
-                  )}
-
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    fontSize: 12, color: isDark ? '#6b7280' : '#94a3b8',
-                  }}>
-                    <span>🕐 {formatDate(noti.createdAt)}</span>
-                    {noti.linkUrl && (
-                      <span style={{ color: isDark ? '#60a5fa' : '#3b82f6' }}>
-                        🔗 {noti.linkUrl}
-                      </span>
-                    )}
-                    <span>👤 User #{noti.userId}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  {!noti.isRead && (
-                    <button
-                      onClick={() => handleMarkAsRead(noti.id)}
-                      title="Đánh dấu đã đọc"
-                      style={{
-                        width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: isDark ? '#1c1d24' : '#f1f5f9',
-                        color: isDark ? '#60a5fa' : '#3b82f6', fontSize: 16,
-                      }}
-                    >
-                      ✓
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setDeleteTarget(noti)}
-                    title="Xóa thông báo"
-                    style={{
-                      width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: isDark ? '#1c1d24' : '#f1f5f9',
-                      color: '#ef4444', fontSize: 14,
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                </div>
+          {/* Table */}
+          <div className="admin-reports-table-wrap">
+            {loadingReports ? (
+              <div className="admin-noti-empty">Đang tải báo lỗi...</div>
+            ) : filteredReports.length === 0 ? (
+              <div className="admin-noti-empty">
+                {reports.length === 0
+                  ? 'Chưa có báo lỗi nào từ người dùng.'
+                  : 'Không tìm thấy báo lỗi phù hợp bộ lọc.'}
               </div>
-            ))}
+            ) : (
+              <table className="admin-reports-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Loại lỗi</th>
+                    <th>Phim / Tập</th>
+                    <th>Mô tả</th>
+                    <th>Người báo</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.map((r) => {
+                    const t = getErrorType(r.errorType);
+                    const s = getStatus(r.status);
+                    return (
+                      <tr key={r.id}>
+                        <td className="col-id">#{r.id}</td>
+                        <td>
+                          <span className="report-type-badge">
+                            {t?.icon} {t?.label || r.errorType}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="report-movie">
+                            Phim #{r.movieId}
+                            {r.episodeId && (
+                              <span className="report-ep"> · Tập #{r.episodeId}</span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="col-desc">
+                          {r.description || <em className="muted">—</em>}
+                        </td>
+                        <td className="col-user">User #{r.userId}</td>
+                        <td className="col-time" title={formatDate(r.createdAt)}>
+                          {formatRelative(r.createdAt)}
+                        </td>
+                        <td>
+                          <span
+                            className="report-status-badge"
+                            style={{ background: s?.color || '#888' }}
+                          >
+                            {s?.label || r.status}
+                          </span>
+                        </td>
+                        <td className="col-actions">
+                          {r.status !== 'resolved' && (
+                            <button
+                              className="report-action resolve"
+                              onClick={() => handleUpdateStatus(r.id, 'resolved')}
+                              title="Đánh dấu đã xử lý"
+                            >
+                              ✓
+                            </button>
+                          )}
+                          {r.status !== 'ignored' && (
+                            <button
+                              className="report-action ignore"
+                              onClick={() => handleUpdateStatus(r.id, 'ignored')}
+                              title="Bỏ qua"
+                            >
+                              ⊘
+                            </button>
+                          )}
+                          {r.status !== 'pending' && (
+                            <button
+                              className="report-action reopen"
+                              onClick={() => handleUpdateStatus(r.id, 'pending')}
+                              title="Mở lại"
+                            >
+                              ↻
+                            </button>
+                          )}
+                          <button
+                            className="report-action delete"
+                            onClick={() => setConfirmDelete(r.id)}
+                            title="Xóa"
+                          >
+                            🗑
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Delete Confirm */}
       <ConfirmDialog
-        open={!!deleteTarget}
-        title="Xóa thông báo"
-        message={`Bạn có chắc muốn xóa thông báo "${deleteTarget?.title}"?`}
+        open={!!confirmDelete}
+        title="Xóa báo lỗi?"
+        message={`Bạn có chắc muốn xóa báo lỗi #${confirmDelete}? Hành động này không thể hoàn tác.`}
         confirmText="Xóa"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        cancelText="Hủy"
+        variant="danger"
+        onConfirm={handleDeleteReport}
+        onCancel={() => setConfirmDelete(null)}
       />
     </div>
   );
 };
+
+export default AdminNotificationsPage;

@@ -523,6 +523,23 @@
   color: var(--text-secondary);
   font-weight: 600;
 }
+.episode-nav-right-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Responsive: mobile thu gọn group phải thành cột */
+@media (max-width: 600px) {
+  .episode-nav-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .episode-nav-right-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
 
 /* Invisible overlay to capture click/double click above video & iframe */
 .player-video-overlay {
