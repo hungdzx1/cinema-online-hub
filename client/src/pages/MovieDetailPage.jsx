@@ -62,11 +62,82 @@ export const MovieDetailPage = () => {
     fetchMovieDetail();
   }, [slug]);
 
-  // Find active episode video url
+  // ===== Nhóm episodes theo serverName =====
+  // Mỗi server là 1 mảng episode đã sắp xếp theo episodeNumber.
+  // VD: { 'Server 1': [...], 'Server 2': [...] }
+  const episodesByServer = useMemo(() => {
+    if (!data?.episodes || data.episodes.length === 0) return {};
+    const map = {};
+    data.episodes.forEach((ep) => {
+      const key = (ep.serverName || 'Server 1').trim() || 'Server 1';
+      if (!map[key]) map[key] = [];
+      map[key].push(ep);
+    });
+    // Sắp xếp mỗi nhóm tăng dần theo episodeNumber
+    Object.values(map).forEach((list) => {
+      list.sort((a, b) => a.episodeNumber - b.episodeNumber);
+    });
+    return map;
+  }, [data]);
+
+  // Danh sách tên server theo thứ tự xuất hiện đầu tiên trong mảng episodes
+  // (để giữ thứ tự tự nhiên thay vì phụ thuộc Object.keys)
+  const serverNames = useMemo(() => {
+    if (!data?.episodes || data.episodes.length === 0) return [];
+    const seen = new Set();
+    const ordered = [];
+    data.episodes.forEach((ep) => {
+      const name = (ep.serverName || 'Server 1').trim() || 'Server 1';
+      if (!seen.has(name)) {
+        seen.add(name);
+        ordered.push(name);
+      }
+    });
+    return ordered;
+  }, [data]);
+
+  // ===== activeServer state (persist theo movie slug) =====
+  const [activeServer, setActiveServer] = useState(() => {
+    return localStorage.getItem(`cinema_server_${slug}`) || '';
+  });
+
+  // Khi data tải xong, nếu activeServer chưa có hoặc không nằm trong serverNames → fallback
+  useEffect(() => {
+    if (serverNames.length === 0) return;
+    if (!activeServer || !serverNames.includes(activeServer)) {
+      const fallback = serverNames[0];
+      setActiveServer(fallback);
+      localStorage.setItem(`cinema_server_${slug}`, fallback);
+    }
+  }, [serverNames, activeServer, slug]);
+
+  // Hàm đổi server — persist vào localStorage
+  const handleSelectServer = (serverName) => {
+    if (serverName === activeServer) return;
+    setActiveServer(serverName);
+    localStorage.setItem(`cinema_server_${slug}`, serverName);
+
+    // Nếu server mới không có tập hiện tại → nhảy về tập 1 của server đó
+    const list = episodesByServer[serverName] || [];
+    const hasCurrentEp = list.some((ep) => ep.episodeNumber === activeEpisodeNumber);
+    if (!hasCurrentEp && list.length > 0) {
+      const firstEpNum = list[0].episodeNumber;
+      setSearchParams({ episode: firstEpNum });
+    }
+  };
+
+  // Find active episode — chỉ tìm trong server đang chọn
   const activeEpisode = useMemo(() => {
-    if (!data?.episodes || data.episodes.length === 0) return null;
-    return data.episodes.find(ep => ep.episodeNumber === activeEpisodeNumber) || data.episodes[0];
-  }, [data, activeEpisodeNumber]);
+    const list = episodesByServer[activeServer] || [];
+    if (list.length === 0) return null;
+    return list.find((ep) => ep.episodeNumber === activeEpisodeNumber) || list[0];
+  }, [episodesByServer, activeServer, activeEpisodeNumber]);
+
+  // Số tập tối đa trên server đang chọn (dùng cho nút "Tập sau")
+  const totalEpisodesActiveServer = useMemo(() => {
+    const list = episodesByServer[activeServer] || [];
+    return list.length > 0 ? Math.max(...list.map((e) => e.episodeNumber)) : (data?.movie?.totalEpisodes || 1);
+  }, [episodesByServer, activeServer, data]);
 
   const handleSelectEpisode = (episodeNumber) => {
     setSearchParams({ episode: episodeNumber });
@@ -124,16 +195,27 @@ export const MovieDetailPage = () => {
               movieSlug={movie.slug}
               embedUrl={activeEpisode?.embedUrl}
               currentEpisodeNumber={activeEpisodeNumber}
-              totalEpisodes={movie.totalEpisodes || episodes.length}
+              totalEpisodes={totalEpisodesActiveServer}
               onSelectEpisode={handleSelectEpisode}
             />
             
             <EpisodeNavigation
               currentEpisodeNumber={activeEpisodeNumber}
-              totalEpisodes={movie.totalEpisodes || episodes.length}
+              totalEpisodes={totalEpisodesActiveServer}
               onSelectEpisode={handleSelectEpisode}
               movieId={movie.id}
               episodeId={activeEpisode?.id}
+              servers={serverNames}
+              activeServer={activeServer}
+              onSelectServer={handleSelectServer}
+              serverEpisodeCounts={Object.fromEntries(
+                serverNames.map((name) => [name, (episodesByServer[name] || []).length])
+              )}
+              currentEpisodeAvailable={
+                (episodesByServer[activeServer] || []).some(
+                  (ep) => ep.episodeNumber === activeEpisodeNumber
+                )
+              }
             />
           </div>
         </section>

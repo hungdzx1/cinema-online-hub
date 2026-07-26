@@ -31,12 +31,10 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT ?? 8000;
+  const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
 
   // ② LOGGER - in khi server khởi động
   logger.log(`🚀 Server đang chạy tại http://localhost:${port}/api`);
 }
 void bootstrap();
-
-  

@@ -1,4 +1,4 @@
-/* ===== Admin Layout ===== */
+* ===== Admin Layout ===== */
 .admin-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -951,18 +951,20 @@
   flex-shrink: 0;
 }
 
-/* Episode Form Inline */
+/* Episode Form Inline — có thêm dropdown server */
 .episode-form-inline {
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 100px;
+  grid-template-columns: 140px 80px 1fr 1fr 100px auto;
   gap: 10px;
   padding: 14px 16px;
   background: var(--bg-main);
   border: 1px solid rgba(255,71,87,0.2);
   border-radius: var(--radius-md);
+  align-items: center;
 }
 
-.episode-form-inline input {
+.episode-form-inline input,
+.episode-form-inline select {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.08);
@@ -971,10 +973,36 @@
   font-size: 13px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.15s;
 }
 
-.episode-form-inline input:focus {
+.episode-form-inline input:focus,
+.episode-form-inline select:focus {
   border-color: var(--color-primary);
+}
+
+.episode-form-inline select {
+  cursor: pointer;
+}
+
+/* ===== Server group (accordion) ===== */
+.episode-server-group {
+  background: var(--bg-card);
+  transition: border-color 0.15s;
+}
+
+.episode-server-group:hover {
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+.episode-server-header:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+.episode-server-add-btn:hover {
+  background: rgba(242, 101, 34, 0.12) !important;
+  color: var(--color-primary, #f26522) !important;
+  border-color: var(--color-primary, #f26522) !important;
 }
 
 .episode-form-actions {
@@ -1145,6 +1173,10 @@
 
   .episode-form-inline {
     grid-template-columns: 1fr;
+  }
+
+  .episode-form-inline .episode-form-actions {
+    justify-content: flex-end;
   }
 }
 

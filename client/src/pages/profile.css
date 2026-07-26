@@ -683,3 +683,331 @@
 
   .profile-divider { margin: 0 16px; }
 }
+
+/* ============================================================
+   ===== TAB: NOTIFICATIONS — premium cinema dark theme =====
+   ============================================================ */
+
+/* Tab badge (unread count on tab button) */
+.profile-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 4px;
+  border-radius: 9px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Section wrapper */
+.profile-notifications-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---- Section header (title + actions) ---- */
+.noti-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.noti-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.noti-section-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.noti-unread-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(242, 101, 34, 0.14);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(242, 101, 34, 0.25);
+}
+
+.noti-section-actions {
+  display: flex;
+  gap: 8px;
+}
+.noti-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.noti-action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.noti-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---- Filter chip bar ---- */
+.noti-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+.noti-filter-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.noti-filter-chip:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.07);
+}
+.noti-filter-chip.active {
+  background: var(--color-primary-gradient);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ---- List ---- */
+.noti-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- Single notification card ---- */
+.noti-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.18s ease;
+  position: relative;
+}
+.noti-card.unread {
+  background: rgba(242, 101, 34, 0.05);
+  border-color: rgba(242, 101, 34, 0.18);
+}
+.noti-card.clickable {
+  cursor: pointer;
+}
+.noti-card.clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+.noti-card.unread.clickable:hover {
+  background: rgba(242, 101, 34, 0.08);
+  border-color: rgba(242, 101, 34, 0.28);
+}
+
+/* Dot indicator */
+.noti-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+.noti-card-dot.unread {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.15);
+}
+.noti-card-dot.read {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Body */
+.noti-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.noti-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.noti-card-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.noti-card-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.noti-card-new {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.noti-card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.noti-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.noti-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Delete button */
+.noti-card-del {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  opacity: 0.55;
+}
+.noti-card-del:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* ---- Skeleton loading ---- */
+.noti-card-skeleton {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.noti-skeleton-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  margin-top: 7px;
+}
+.noti-skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.noti-skeleton-line {
+  height: 11px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Empty state ---- */
+.noti-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+}
+.noti-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+.noti-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.noti-empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 380px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .noti-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .noti-section-actions {
+    justify-content: flex-end;
+  }
+  .noti-action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .noti-card {
+    padding: 12px;
+  }
+  .noti-card-title {
+    font-size: 14px;
+  }
+  .noti-card-del {
+    width: 26px;
+    height: 26px;
+  }
+}

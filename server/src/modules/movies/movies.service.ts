@@ -211,6 +211,9 @@ export class MoviesService {
       limit = 20,
     } = filters;
 
+    // ✅ applyFilters: chỉ thêm WHERE conditions (KHÔNG join/select)
+    // Dùng subquery cho country + genreIds để tránh xung đột với leftJoinAndSelect
+    // (sẽ gây lỗi ONLY_FULL_GROUP_BY nếu dùng GROUP BY trên main query).
     const applyFilters = (queryBuilder: SelectQueryBuilder<Movie>) => {
       queryBuilder.where('movie.isVisible = :visible', { visible: true });
 
@@ -235,43 +238,52 @@ export class MoviesService {
         });
       }
 
+      // ✅ Lọc theo country qua subquery (tránh JOIN làm sai COUNT)
+      // Junction table: movie_countries (movie_id, country_id)
       if (countryId || country) {
         const countryVal = country || countryId;
         if (!isNaN(Number(countryVal))) {
-          queryBuilder.innerJoin(
-            'movie.countries',
-            'country',
-            'country.id = :cId',
-            {
-              cId: Number(countryVal),
-            },
+          queryBuilder.andWhere(
+            `movie.id IN (
+              SELECT mc.movie_id FROM movie_countries mc WHERE mc.country_id = :cId
+            )`,
+            { cId: Number(countryVal) },
           );
         } else {
-          queryBuilder.innerJoin(
-            'movie.countries',
-            'country',
-            'LOWER(country.slug) = LOWER(:cSlug)',
-            {
-              cSlug: String(countryVal).toLowerCase(),
-            },
+          queryBuilder.andWhere(
+            `movie.id IN (
+              SELECT mc.movie_id
+              FROM movie_countries mc
+              INNER JOIN countries c ON c.id = mc.country_id
+              WHERE LOWER(c.slug) = LOWER(:cSlug)
+            )`,
+            { cSlug: String(countryVal).toLowerCase() },
           );
         }
       }
 
+      // ✅ Lọc theo genreIds (AND — phải có TẤT CẢ genre) qua subquery
+      // Junction table: movie_genres (movie_id, genre_id)
       if (genreIds && genreIds.length > 0) {
-        queryBuilder
-          .innerJoin('movie.genres', 'genre', 'genre.id IN (:...genreIds)', {
-            genreIds,
-          })
-          .groupBy('movie.id')
-          .having('COUNT(DISTINCT genre.id) = :genreCount', {
-            genreCount: genreIds.length,
-          });
+        queryBuilder.andWhere(
+          `movie.id IN (
+            SELECT mg.movie_id
+            FROM movie_genres mg
+            WHERE mg.genre_id IN (:...genreIds)
+            GROUP BY mg.movie_id
+            HAVING COUNT(DISTINCT mg.genre_id) = :genreCount
+          )`,
+          { genreIds, genreCount: genreIds.length },
+        );
       }
     };
 
+    // ===== MAIN QUERY: load relations để frontend có genres + countries =====
     const qb = this.movieRepository.createQueryBuilder('movie');
     applyFilters(qb);
+    // ✅ Luôn load relations — trước đây quên nên Hero banner hiện "Đang cập nhật"
+    qb.leftJoinAndSelect('movie.genres', 'genre');
+    qb.leftJoinAndSelect('movie.countries', 'country');
 
     // Sắp xếp kết quả
     switch (sortBy) {
@@ -288,19 +300,13 @@ export class MoviesService {
         break;
     }
 
-    // Lấy tổng số lượng dòng kết quả an toàn
-    let total = 0;
-    if (genreIds && genreIds.length > 0) {
-      // Khi dùng GROUP BY / HAVING, count bằng cách lấy độ dài danh sách ID thô
-      const countQb = this.movieRepository.createQueryBuilder('movie');
-      applyFilters(countQb);
-      const countRows = await countQb.select('movie.id').getRawMany();
-      total = countRows.length;
-    } else {
-      const countQb = this.movieRepository.createQueryBuilder('movie');
-      applyFilters(countQb);
-      total = await countQb.getCount();
-    }
+    // ✅ Tránh trùng row do LEFT JOIN nhiều genre/country cho 1 movie
+    qb.distinct(true);
+
+    // ===== COUNT QUERY: KHÔNG leftJoinAndSelect để COUNT không bị sai =====
+    const countQb = this.movieRepository.createQueryBuilder('movie');
+    applyFilters(countQb);
+    const total = await countQb.getCount();
 
     // Phân trang
     qb.limit(limit).offset((page - 1) * limit);

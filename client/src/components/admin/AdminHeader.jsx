@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { notificationApi } from '../../services/notificationApi';
 import './admin.css';
 
 const BREADCRUMBS = {
@@ -74,6 +75,24 @@ const normalize = (str) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd');
 
+// Định dạng thời gian tương đối: "5 phút trước"
+const formatRelative = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+};
+
+// Map type thông báo → label tiếng Việt + màu nhãn
+const NOTI_TYPE_LABELS = {
+  system: { label: 'Hệ thống', color: '#3b82f6' },
+  new_episode: { label: 'Tập phim mới', color: '#10b981' },
+};
+
 export const AdminHeader = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -88,6 +107,11 @@ export const AdminHeader = () => {
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
   const searchRef = useRef(null);
+
+  // ===== State cho thông báo (lấy từ API thật) =====
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotis, setLoadingNotis] = useState(false);
+  const [notiError, setNotiError] = useState('');
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -138,7 +162,6 @@ export const AdminHeader = () => {
     setSearchQuery('');
     setShowSearchResults(false);
     if (item.action === 'export') {
-      // Điều hướng về Dashboard rồi kích hoạt xuất báo cáo
       navigate(item.path);
       setTimeout(() => window.print(), 300);
       return;
@@ -155,9 +178,71 @@ export const AdminHeader = () => {
     }
   };
 
-  // ===== dữ liệu thông báo mẫu — thay bằng API thật khi Backend có endpoint =====
-  const notifications = [];
+  // ===== Load thông báo khi mở dropdown =====
+  const loadNotifications = async () => {
+    setLoadingNotis(true);
+    setNotiError('');
+    try {
+      const data = await notificationApi.getMine();
+      setNotifications(Array.isArray(data) ? data.slice(0, 10) : []);
+    } catch (err) {
+      console.error('Load notifications failed:', err);
+      setNotiError('Không tải được thông báo.');
+      setNotifications([]);
+    } finally {
+      setLoadingNotis(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showNotiMenu) {
+      loadNotifications();
+    }
+  }, [showNotiMenu]);
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // ===== Đánh dấu 1 thông báo đã đọc + điều hướng nếu có link =====
+  const handleNotiClick = async (noti) => {
+    // Nếu chưa đọc → gọi API mark read
+    if (!noti.isRead) {
+      try {
+        await notificationApi.markRead(noti.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === noti.id ? { ...n, isRead: true } : n)),
+        );
+      } catch (err) {
+        console.error('Mark read failed:', err);
+      }
+    }
+    // Nếu có linkUrl → điều hướng
+    if (noti.linkUrl) {
+      setShowNotiMenu(false);
+      navigate(noti.linkUrl);
+    }
+  };
+
+  // ===== Đánh dấu tất cả đã đọc =====
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return;
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Mark all read failed:', err);
+    }
+  };
+
+  // ===== Xóa 1 thông báo =====
+  const handleDeleteNoti = async (e, id) => {
+    e.stopPropagation(); // Ngăn click lan ra noti item
+    try {
+      await notificationApi.delete(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('Delete notification failed:', err);
+    }
+  };
 
   return (
     <header className="admin-header">
@@ -176,7 +261,7 @@ export const AdminHeader = () => {
         className="admin-header-right"
         style={{ display: 'flex', alignItems: 'center', gap: 14 }}
       >
-        {/* ===== Thanh tìm kiếm chức năng — đã nối logic lọc thật ===== */}
+        {/* ===== Thanh tìm kiếm chức năng ===== */}
         <div ref={searchRef} style={{ position: 'relative', width: 260 }}>
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -262,7 +347,7 @@ export const AdminHeader = () => {
           )}
         </div>
 
-        {/* Icon chuông thông báo */}
+        {/* ===== Icon chuông thông báo — đã nối API thật ===== */}
         <div ref={notiMenuRef} style={{ position: 'relative' }}>
           <button
             type="button"
@@ -294,30 +379,217 @@ export const AdminHeader = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: `2px solid ${isDark ? '#16171d' : '#fff'}`,
               }}>
-                {unreadCount}
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
           {showNotiMenu && (
             <div style={{
-              position: 'absolute', top: 46, right: 0, width: 300,
+              position: 'absolute', top: 46, right: 0, width: 340,
               background: isDark ? '#16171d' : '#fff',
               border: `1px solid ${isDark ? '#2a2b33' : '#e2e8f0'}`,
               borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
               zIndex: 999, overflow: 'hidden',
+              maxHeight: 480, display: 'flex', flexDirection: 'column',
             }}>
-              <div style={{ padding: '12px 16px', borderBottom: `1px solid ${isDark ? '#2a2b33' : '#f1f5f9'}`, fontWeight: 700, fontSize: 14, color: isDark ? '#fff' : '#1e293b' }}>
-                Thông báo
+              {/* Header: tiêu đề + nút "đánh dấu tất cả đã đọc" */}
+              <div style={{
+                padding: '12px 16px',
+                borderBottom: `1px solid ${isDark ? '#2a2b33' : '#f1f5f9'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                fontWeight: 700, fontSize: 14,
+                color: isDark ? '#fff' : '#1e293b',
+              }}>
+                <span>
+                  Thông báo
+                  {unreadCount > 0 && (
+                    <span style={{
+                      marginLeft: 8, fontSize: 11, fontWeight: 700,
+                      color: '#fff', background: '#ef4444',
+                      padding: '1px 7px', borderRadius: 8,
+                    }}>
+                      {unreadCount} mới
+                    </span>
+                  )}
+                </span>
+                {unreadCount > 0 && !loadingNotis && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    style={{
+                      background: 'transparent', border: 'none',
+                      color: 'var(--color-primary, #f26522)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Đánh dấu đã đọc
+                  </button>
+                )}
               </div>
-              <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: isDark ? '#8a99af' : '#94a3b8' }}>
-                Không có thông báo mới.
+
+              {/* Body: danh sách thông báo */}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {loadingNotis ? (
+                  <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: isDark ? '#8a99af' : '#94a3b8' }}>
+                    Đang tải...
+                  </div>
+                ) : notiError ? (
+                  <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: '#ef4444' }}>
+                    {notiError}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div style={{ padding: '40px 16px', textAlign: 'center', fontSize: 13, color: isDark ? '#8a99af' : '#94a3b8' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🔕</div>
+                    Không có thông báo mới.
+                  </div>
+                ) : (
+                  notifications.map((n) => {
+                    const typeInfo = NOTI_TYPE_LABELS[n.type] || { label: n.type, color: '#6b7280' };
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => handleNotiClick(n)}
+                        style={{
+                          padding: '12px 16px',
+                          borderBottom: `1px solid ${isDark ? '#22232a' : '#f1f5f9'}`,
+                          cursor: n.linkUrl ? 'pointer' : 'default',
+                          position: 'relative',
+                          background: !n.isRead
+                            ? (isDark ? 'rgba(242,101,34,0.06)' : 'rgba(242,101,34,0.04)')
+                            : 'transparent',
+                          transition: 'background 0.15s',
+                          display: 'flex', gap: 10,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (n.linkUrl) e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = !n.isRead
+                            ? (isDark ? 'rgba(242,101,34,0.06)' : 'rgba(242,101,34,0.04)')
+                            : 'transparent';
+                        }}
+                      >
+                        {/* Chấm đỏ thông báo chưa đọc */}
+                        <div style={{
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: n.isRead ? 'transparent' : '#ef4444',
+                          marginTop: 6, flexShrink: 0,
+                          border: n.isRead ? `1px solid ${isDark ? '#333' : '#d1d5db'}` : 'none',
+                        }} />
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2,
+                          }}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 700,
+                              color: '#fff',
+                              background: typeInfo.color,
+                              padding: '1px 7px', borderRadius: 6,
+                              textTransform: 'uppercase', letterSpacing: 0.3,
+                            }}>
+                              {typeInfo.label}
+                            </span>
+                            <span style={{
+                              fontSize: 11, color: isDark ? '#6b7789' : '#94a3b8',
+                              marginLeft: 'auto',
+                            }}>
+                              {formatRelative(n.createdAt)}
+                            </span>
+                          </div>
+                          <div style={{
+                            fontSize: 13, fontWeight: 600,
+                            color: isDark ? '#e5e7eb' : '#1e293b',
+                            lineHeight: 1.35,
+                            marginBottom: n.content ? 2 : 0,
+                          }}>
+                            {n.title}
+                          </div>
+                          {n.content && (
+                            <div style={{
+                              fontSize: 12, color: isDark ? '#8a99af' : '#64748b',
+                              lineHeight: 1.4,
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}>
+                              {n.content}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Nút xóa */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteNoti(e, n.id)}
+                          title="Xóa thông báo"
+                          style={{
+                            position: 'absolute', top: 8, right: 8,
+                            width: 22, height: 22, borderRadius: '50%',
+                            background: 'transparent', border: 'none', cursor: 'pointer',
+                            color: isDark ? '#6b7789' : '#94a3b8',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            opacity: 0.6, transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
+                            e.currentTarget.style.color = '#ef4444';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = '0.6';
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = isDark ? '#6b7789' : '#94a3b8';
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
               </div>
+
+              {/* Footer: link xem tất cả */}
+              {notifications.length > 0 && (
+                <div style={{
+                  borderTop: `1px solid ${isDark ? '#2a2b33' : '#f1f5f9'}`,
+                  padding: 0,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNotiMenu(false);
+                      navigate('/admin/notifications');
+                    }}
+                    style={{
+                      width: '100%', padding: '11px 16px',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'var(--color-primary, #f26522)',
+                      fontSize: 13, fontWeight: 600,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = isDark ? 'rgba(242,101,34,0.08)' : 'rgba(242,101,34,0.06)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    Xem tất cả thông báo →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Theme toggle (giữ nguyên) */}
+        {/* Theme toggle */}
         <button
           type="button"
           className="admin-theme-toggle"

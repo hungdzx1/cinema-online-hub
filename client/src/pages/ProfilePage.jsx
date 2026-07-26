@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../services/userApi';
 import { historyApi } from '../services/historyApi';
+import { notificationApi } from '../services/notificationApi';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import './profile.css';
 
@@ -53,6 +54,27 @@ const UploadIcon  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="
 const CheckIcon   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
 const AlertIcon   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
 const HistoryIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3" /><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg>;
+const BellIcon    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>;
+const TrashIcon   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>;
+const CheckAllIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /><polyline points="22 10 13 19" /></svg>;
+
+/* ---- Định dạng thời gian tương đối ---- */
+const formatRelativeTime = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+};
+
+/* ---- Map loại thông báo → nhãn + màu ---- */
+const NOTI_TYPE_LABELS = {
+  system: { label: 'Hệ thống', color: '#3b82f6' },
+  new_episode: { label: 'Tập phim mới', color: '#10b981' },
+};
 
 /* ============== COMPONENT ============== */
 export const ProfilePage = () => {
@@ -60,6 +82,7 @@ export const ProfilePage = () => {
   const { user, isLoggedIn, updateUser } = useAuth();
   const fileInputRef = useRef(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const tabParam = searchParams.get('tab') || 'info';
   const [activeTab,    setActiveTab]    = useState(tabParam);
@@ -78,6 +101,11 @@ export const ProfilePage = () => {
   /* history states */
   const [historyList, setHistoryList] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  /* notification states */
+  const [notiList,       setNotiList]       = useState([]);
+  const [loadingNotis,   setLoadingNotis]   = useState(false);
+  const [notiFilter,     setNotiFilter]     = useState('all'); // all | unread | system | new_episode
 
   /* edit form */
   const [editUsername,   setEditUsername]   = useState('');
@@ -123,6 +151,80 @@ export const ProfilePage = () => {
       }
     })();
   }, [activeTab]);
+
+  // ===== Fetch notifications when activeTab becomes 'notifications' =====
+  const loadNotifications = async () => {
+    try {
+      setLoadingNotis(true);
+      const data = await notificationApi.getMine();
+      setNotiList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+      setNotiList([]);
+    } finally {
+      setLoadingNotis(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'notifications') return;
+    if (!isLoggedIn) return;
+    loadNotifications();
+  }, [activeTab, isLoggedIn]);
+
+  // ===== Click vào 1 thông báo: mark read + navigate linkUrl =====
+  const handleNotiClick = async (noti) => {
+    if (!noti.isRead) {
+      try {
+        await notificationApi.markRead(noti.id);
+        setNotiList(prev => prev.map(n => (n.id === noti.id ? { ...n, isRead: true } : n)));
+      } catch (err) {
+        console.error('Mark read failed:', err);
+      }
+    }
+    if (noti.linkUrl) {
+      navigate(noti.linkUrl);
+    }
+  };
+
+  // ===== Đánh dấu tất cả đã đọc =====
+  const handleMarkAllRead = async () => {
+    const hasUnread = notiList.some(n => !n.isRead);
+    if (!hasUnread) return;
+    try {
+      await notificationApi.markAllRead();
+      setNotiList(prev => prev.map(n => ({ ...n, isRead: true })));
+      setMessage({ type: 'success', text: 'Đã đánh dấu tất cả thông báo là đã đọc.' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+    } catch (err) {
+      console.error('Mark all read failed:', err);
+      setMessage({ type: 'error', text: 'Không thể đánh dấu đã đọc.' });
+    }
+  };
+
+  // ===== Xóa 1 thông báo =====
+  const handleDeleteNoti = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Xóa thông báo này?')) return;
+    try {
+      await notificationApi.delete(id);
+      setNotiList(prev => prev.filter(n => n.id !== id));
+      setMessage({ type: 'success', text: 'Đã xóa thông báo.' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 1500);
+    } catch (err) {
+      console.error('Delete notification failed:', err);
+      setMessage({ type: 'error', text: 'Không thể xóa thông báo.' });
+    }
+  };
+
+  // ===== Filter thông báo theo tab =====
+  const filteredNotis = notiList.filter((n) => {
+    if (notiFilter === 'unread') return !n.isRead;
+    if (notiFilter === 'system') return n.type === 'system';
+    if (notiFilter === 'new_episode') return n.type === 'new_episode';
+    return true;
+  });
+  const unreadNotiCount = notiList.filter(n => !n.isRead).length;
 
   const formatProgress = (seconds) => {
     if (!seconds) return 'Bắt đầu xem';
@@ -400,6 +502,16 @@ export const ProfilePage = () => {
                 >
                   <HistoryIcon /> Lịch sử xem
                 </button>
+                <button
+                  id="profile-tab-notifications"
+                  className={`profile-tab${activeTab === 'notifications' ? ' active' : ''}`}
+                  onClick={() => setActiveTab('notifications')}
+                >
+                  <BellIcon /> Thông báo
+                  {unreadNotiCount > 0 && (
+                    <span className="profile-tab-badge">{unreadNotiCount > 9 ? '9+' : unreadNotiCount}</span>
+                  )}
+                </button>
               </div>
 
               {/* Alert messages */}
@@ -647,6 +759,140 @@ export const ProfilePage = () => {
                           </button>
                         </Link>
                       ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ===== TAB: NOTIFICATIONS ===== */}
+              {activeTab === 'notifications' && (
+                <div className="profile-notifications-section" style={{ animation: 'tabFadeIn 0.35s ease' }}>
+                  {/* ===== Header: title + actions ===== */}
+                  <div className="noti-section-header">
+                    <div className="noti-section-title">
+                      <h3>Thông báo của tôi</h3>
+                      {unreadNotiCount > 0 && (
+                        <span className="noti-unread-pill">{unreadNotiCount} chưa đọc</span>
+                      )}
+                    </div>
+                    <div className="noti-section-actions">
+                      <button
+                        type="button"
+                        className="noti-action-btn"
+                        onClick={handleMarkAllRead}
+                        disabled={unreadNotiCount === 0}
+                        title="Đánh dấu tất cả là đã đọc"
+                      >
+                        <CheckAllIcon /> Đánh dấu đã đọc
+                      </button>
+                      <button
+                        type="button"
+                        className="noti-action-btn"
+                        onClick={loadNotifications}
+                        title="Tải lại danh sách"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        Làm mới
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ===== Filter chips ===== */}
+                  <div className="noti-filter-bar">
+                    {[
+                      { key: 'all',         label: 'Tất cả' },
+                      { key: 'unread',      label: `Chưa đọc${unreadNotiCount > 0 ? ` (${unreadNotiCount})` : ''}` },
+                      { key: 'system',      label: 'Hệ thống' },
+                      { key: 'new_episode', label: 'Tập phim mới' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        className={`noti-filter-chip${notiFilter === opt.key ? ' active' : ''}`}
+                        onClick={() => setNotiFilter(opt.key)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* ===== List ===== */}
+                  {loadingNotis ? (
+                    <div className="noti-list">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="noti-card noti-card-skeleton">
+                          <div className="noti-skeleton-dot" />
+                          <div className="noti-skeleton-body">
+                            <div className="noti-skeleton-line" style={{ width: '40%' }} />
+                            <div className="noti-skeleton-line" style={{ width: '85%' }} />
+                            <div className="noti-skeleton-line" style={{ width: '60%' }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredNotis.length === 0 ? (
+                    <div className="noti-empty">
+                      <div className="noti-empty-icon">🔔</div>
+                      <div className="noti-empty-title">
+                        {notiFilter === 'unread' ? 'Không có thông báo chưa đọc'
+                          : notiFilter === 'system' ? 'Không có thông báo hệ thống'
+                          : notiFilter === 'new_episode' ? 'Không có thông báo tập phim mới'
+                          : 'Chưa có thông báo nào'}
+                      </div>
+                      <div className="noti-empty-desc">
+                        Khi có thông báo mới từ hệ thống hoặc tập phim bạn theo dõi, nó sẽ xuất hiện tại đây.
+                      </div>
+                      <Link to="/" className="profile-btn profile-btn-primary" style={{ marginTop: '16px', textDecoration: 'none', display: 'inline-flex', padding: '10px 22px', borderRadius: '10px', fontSize: '13px', fontWeight: '600' }}>
+                        Khám phá phim ngay
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="noti-list">
+                      {filteredNotis.map((n) => {
+                        const typeInfo = NOTI_TYPE_LABELS[n.type] || { label: n.type || 'Khác', color: '#6b7280' };
+                        return (
+                          <div
+                            key={n.id}
+                            className={`noti-card${!n.isRead ? ' unread' : ''}${n.linkUrl ? ' clickable' : ''}`}
+                            onClick={() => handleNotiClick(n)}
+                          >
+                            <div className={`noti-card-dot${n.isRead ? ' read' : ' unread'}`} />
+                            <div className="noti-card-body">
+                              <div className="noti-card-top">
+                                <span
+                                  className="noti-card-type"
+                                  style={{ background: typeInfo.color }}
+                                >
+                                  {typeInfo.label}
+                                </span>
+                                <span className="noti-card-time">{formatRelativeTime(n.createdAt)}</span>
+                                {!n.isRead && <span className="noti-card-new">MỚI</span>}
+                              </div>
+                              <div className="noti-card-title">{n.title}</div>
+                              {n.content && <div className="noti-card-desc">{n.content}</div>}
+                              {n.linkUrl && (
+                                <div className="noti-card-link">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14" /><polyline points="12 5 19 12 12 19" />
+                                  </svg>
+                                  Xem chi tiết
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className="noti-card-del"
+                              onClick={(e) => handleDeleteNoti(e, n.id)}
+                              title="Xóa thông báo"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

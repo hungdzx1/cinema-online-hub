@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://automatic-acorn-q7pwqvx79v7jf6774-3000.app.github.dev';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://laughing-fishstick-5gxwqv9g4vp5c79v5-3000.app.github.dev';
 
 // Khởi tạo instance của axios với các cài đặt chung
 const apiClient = axios.create({

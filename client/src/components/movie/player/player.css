@@ -552,3 +552,136 @@
   cursor: pointer;
   background: transparent;
 }
+
+/* ============================================================
+   ===== APPEND: Multi-server chip selector =====
+   (chỉ thêm cho tính năng chọn Server 1 / Server 2 — không sửa CSS có sẵn)
+   ============================================================ */
+
+/* Group giữa: chứa "Tập X/Y" + chip server */
+.episode-nav-center-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Tag "⚠" cảnh báo tập không có trên server hiện tại */
+.episode-nav-missing-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: help;
+}
+
+/* ===== Server chip group ===== */
+.server-chip-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.server-chip-label {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.server-chip-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.07));
+}
+
+.server-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #aaa);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.server-chip:hover:not(.active):not(.empty) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #fff);
+}
+
+.server-chip.active {
+  background: var(--color-primary-gradient, linear-gradient(135deg, #f26522 0%, #ff4757 100%));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.35);
+}
+
+.server-chip.empty {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.server-chip.empty:hover {
+  opacity: 0.4;
+}
+
+.server-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+.server-chip.active .server-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== Responsive riêng cho server chips (mobile) =====
+   Dùng @media riêng để không đụng @media có sẵn ở trên */
+@media (max-width: 600px) {
+  .episode-nav-center-group {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .server-chip-group {
+    width: 100%;
+    justify-content: center;
+  }
+  .server-chip-list {
+    flex: 1;
+    justify-content: center;
+  }
+  .server-chip {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 10px;
+  }
+}

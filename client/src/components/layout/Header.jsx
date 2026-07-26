@@ -6,6 +6,7 @@ import { HistoryIcon, BookmarkIcon, LoginIcon, HomeIcon, GridIcon, FilmIcon, Sta
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { genreApi } from '../../services/genreApi';
+import { notificationApi } from '../../services/notificationApi';
 import './layout.css';
 
 /* ---- Avatar fallback helper ---- */
@@ -30,6 +31,24 @@ const UserAvatar = ({ user }) => {
   );
 };
 
+// Định dạng thời gian tương đối: "5 phút trước"
+const formatRelative = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+};
+
+// Map type thông báo → label + màu
+const NOTI_TYPE_LABELS = {
+  system: { label: 'Hệ thống', color: '#3b82f6' },
+  new_episode: { label: 'Tập phim mới', color: '#10b981' },
+};
+
 export const Header = () => {
   const [searchValue, setSearchValue] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -41,7 +60,7 @@ export const Header = () => {
 
   // State cho menu thể loại / quốc gia
   const [genres, setGenres] = useState([]);
-  const [activeMenu, setActiveMenu] = useState(null); 
+  const [activeMenu, setActiveMenu] = useState(null);
   const mockCountries = [
     { id: 1, name: 'Việt Nam', slug: 'viet-nam' },
     { id: 2, name: 'Hàn Quốc', slug: 'han-quoc' },
@@ -55,14 +74,21 @@ export const Header = () => {
     { id: 10, name: 'Anh', slug: 'anh' },
   ];
 
+  // ===== State cho dropdown thông báo người dùng =====
+  const [showNotiMenu, setShowNotiMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotis, setLoadingNotis] = useState(false);
+  const [notiError, setNotiError] = useState('');
+  const notiRef = useRef(null);
+
   // Gọi API lấy danh sách thể loại
   useEffect(() => {
     const fetchGenres = async () => {
       try {
         const data = await genreApi.getAll();
         setGenres(Array.isArray(data) ? data : []);
-      } catch (e) { 
-        console.error("Lỗi tải thể loại", e); 
+      } catch (e) {
+        console.error("Lỗi tải thể loại", e);
       }
     };
     fetchGenres();
@@ -83,11 +109,14 @@ export const Header = () => {
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown khi click ra ngoài (cả user menu và noti menu)
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (notiRef.current && !notiRef.current.contains(e.target)) {
+        setShowNotiMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -98,6 +127,70 @@ export const Header = () => {
     logout();
     setDropdownOpen(false);
     navigate('/');
+  };
+
+  // ===== Load thông báo khi mở dropdown =====
+  const loadNotifications = async () => {
+    setLoadingNotis(true);
+    setNotiError('');
+    try {
+      const data = await notificationApi.getMine();
+      setNotifications(Array.isArray(data) ? data.slice(0, 8) : []);
+    } catch (err) {
+      console.error('Load notifications failed:', err);
+      setNotiError('Không tải được thông báo.');
+      setNotifications([]);
+    } finally {
+      setLoadingNotis(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showNotiMenu && isLoggedIn) {
+      loadNotifications();
+    }
+  }, [showNotiMenu, isLoggedIn]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // ===== Click vào thông báo: mark read + navigate linkUrl =====
+  const handleNotiClick = async (noti) => {
+    if (!noti.isRead) {
+      try {
+        await notificationApi.markRead(noti.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === noti.id ? { ...n, isRead: true } : n)),
+        );
+      } catch (err) {
+        console.error('Mark read failed:', err);
+      }
+    }
+    if (noti.linkUrl) {
+      setShowNotiMenu(false);
+      navigate(noti.linkUrl);
+    }
+  };
+
+  // ===== Đánh dấu tất cả đã đọc =====
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return;
+    try {
+      await notificationApi.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Mark all read failed:', err);
+    }
+  };
+
+  // ===== Xóa 1 thông báo =====
+  const handleDeleteNoti = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await notificationApi.delete(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('Delete notification failed:', err);
+    }
   };
 
   return (
@@ -120,20 +213,133 @@ export const Header = () => {
           </div>
 
           <div className="action-section">
-            <Button 
-              variant="dark" 
+            <Button
+              variant="dark"
               icon={<HistoryIcon size={18} />}
               onClick={() => navigate(isLoggedIn ? '/profile?tab=history' : '/login')}
             >
               Lịch sử
             </Button>
-            <Button 
-              variant="dark" 
+            <Button
+              variant="dark"
               icon={<BookmarkIcon size={18} />}
               onClick={() => navigate(isLoggedIn ? '/watchlist' : '/login')}
             >
               Theo dõi
             </Button>
+
+            {/* ===== Chuông thông báo (chỉ hiện khi đã login) ===== */}
+            {isLoggedIn && (
+              <div className="user-noti-menu" ref={notiRef}>
+                <button
+                  type="button"
+                  className="user-noti-trigger"
+                  onClick={() => setShowNotiMenu((v) => !v)}
+                  aria-label="Thông báo"
+                  title="Thông báo"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="user-noti-badge">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotiMenu && (
+                  <div className="user-noti-dropdown" role="menu">
+                    {/* Header */}
+                    <div className="user-noti-header">
+                      <span className="user-noti-title">
+                        Thông báo
+                        {unreadCount > 0 && (
+                          <span className="user-noti-new-badge">{unreadCount} mới</span>
+                        )}
+                      </span>
+                      {unreadCount > 0 && !loadingNotis && (
+                        <button
+                          type="button"
+                          className="user-noti-markall"
+                          onClick={handleMarkAllRead}
+                        >
+                          Đánh dấu đã đọc
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Body */}
+                    <div className="user-noti-body">
+                      {loadingNotis ? (
+                        <div className="user-noti-empty">Đang tải...</div>
+                      ) : notiError ? (
+                        <div className="user-noti-empty user-noti-error">{notiError}</div>
+                      ) : notifications.length === 0 ? (
+                        <div className="user-noti-empty">
+                          <div style={{ fontSize: 28, marginBottom: 8 }}>🔕</div>
+                          Không có thông báo mới.
+                        </div>
+                      ) : (
+                        notifications.map((n) => {
+                          const typeInfo = NOTI_TYPE_LABELS[n.type] || { label: n.type, color: '#6b7280' };
+                          return (
+                            <div
+                              key={n.id}
+                              className={`user-noti-item ${!n.isRead ? 'unread' : ''} ${n.linkUrl ? 'clickable' : ''}`}
+                              onClick={() => handleNotiClick(n)}
+                            >
+                              <div className={`user-noti-dot ${n.isRead ? 'read' : 'unread'}`} />
+                              <div className="user-noti-content">
+                                <div className="user-noti-item-top">
+                                  <span
+                                    className="user-noti-type"
+                                    style={{ background: typeInfo.color }}
+                                  >
+                                    {typeInfo.label}
+                                  </span>
+                                  <span className="user-noti-time">{formatRelative(n.createdAt)}</span>
+                                </div>
+                                <div className="user-noti-item-title">{n.title}</div>
+                                {n.content && (
+                                  <div className="user-noti-item-desc">{n.content}</div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                className="user-noti-del"
+                                onClick={(e) => handleDeleteNoti(e, n.id)}
+                                title="Xóa thông báo"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        className="user-noti-footer"
+                        onClick={() => {
+                          setShowNotiMenu(false);
+                          navigate('/profile?tab=notifications');
+                        }}
+                      >
+                        Xem tất cả thông báo →
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Theme Toggle */}
             <button
@@ -217,6 +423,16 @@ export const Header = () => {
                       </svg>
                       Phim theo dõi
                     </button>
+
+                    {/* ===== Tab thông báo trong menu user ===== */}
+                    <button className="user-dropdown-item" role="menuitem" onClick={() => { navigate('/profile?tab=notifications'); setDropdownOpen(false); }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                      </svg>
+                      Thông báo của tôi
+                    </button>
+
                     {/* ===== Chỉ Admin mới thấy nút này ===== */}
                     {user?.role === 'admin' && (
                       <>
@@ -277,10 +493,10 @@ export const Header = () => {
             <li className="nav-item active">
               <Link to="/"><HomeIcon size={18} /> Trang chủ</Link>
             </li>
-            
+
             {/* Menu Thể Loại (Hover xổ xuống) */}
-            <li className="nav-item has-mega-menu" 
-                onMouseEnter={() => setActiveMenu('genres')} 
+            <li className="nav-item has-mega-menu"
+                onMouseEnter={() => setActiveMenu('genres')}
                 onMouseLeave={() => setActiveMenu(null)}>
               <div className="nav-link-trigger">
                 <GridIcon size={18} /> Thể Loại <span className="arrow-down">▾</span>

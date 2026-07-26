@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
@@ -17,8 +18,22 @@ import { RandomPage } from './pages/RandomPage';
 import { WatchlistProvider } from './context/WatchlistContext';
 import { CategoriesPage } from './pages/admin/CategoriesPage';
 import { CommentsPage } from './pages/admin/CommentsPage';
-import { NotificationsPage } from './pages/admin/NotificationsPage';
 import './index.css';
+
+// ⭐ LAZY LOAD trang thông báo — nếu trang này có lỗi sẽ KHÔNG làm sập toàn bộ app
+// Lỗi chỉ xuất hiện khi user thực sự vào /admin/notifications
+const NotificationsPage = lazy(() =>
+  import('./pages/admin/NotificationsPage').then((m) => ({
+    default: m.AdminNotificationsPage,
+  })),
+);
+
+// Loading fallback đơn giản
+const PageLoading = () => (
+  <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>
+    Đang tải trang...
+  </div>
+);
 
 function App() {
   return (
@@ -52,7 +67,14 @@ function App() {
               <Route path="users" element={<UsersPage />} />
               <Route path="comments" element={<CommentsPage />} />
               <Route path="categories" element={<CategoriesPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
+              <Route
+                path="notifications"
+                element={
+                  <Suspense fallback={<PageLoading />}>
+                    <NotificationsPage />
+                  </Suspense>
+                }
+              />
             </Route>
           </Routes>
         </BrowserRouter>

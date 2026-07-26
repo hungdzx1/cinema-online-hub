@@ -1,6 +1,10 @@
--- ============================================================
+============================================================
 -- SEED DATA - Phimplay24 (khớp schema.sql của nhóm)
 -- Admin: admin@phimplay24.com | Password: admin123
+-- ============================================================
+-- Multi-server demo:
+--   Server 1 = Link VSMOV stream (chính)
+--   Server 2 = Link YouTube backup (dự phòng)
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -87,20 +91,37 @@ INSERT INTO movies (title, slug, description, poster_url, type, status, release_
 ('One Piece', 'one-piece', 'Hành trình tìm kho báu One Piece của Luffy và băng Mũ Rơm.', 'https://placehold.co/300x450?text=One+Piece', 'anime', 'ongoing', 1999, 1100, 134000, 9.3, 9500, 1, 1);
 
 -- ============================================================
--- 5. EPISODES - tập phim (link YouTube embed mẫu)
+-- 5. EPISODES - tập phim
+--    Server 1 = Link VSMOV stream (chính)
+--    Server 2 = Link YouTube backup (dự phòng)
 -- ============================================================
--- Squid Game (id=4)
+
+-- ---------- Mắt Biếc (id=1) - phim lẻ, có 2 server ----------
 INSERT INTO episodes (movie_id, episode_number, title, embed_url, server_name) VALUES
-(4, 1, 'Tập 1 - Đèn Đỏ Đèn Xanh', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
-(4, 2, 'Tập 2 - Địa Ngục', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
-(4, 3, 'Tập 3 - Người Cầm Ô', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1');
--- Hậu Duệ Mặt Trời (id=3)
+(1, 1, 'Full',                              'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
+(1, 1, 'Full (Backup YouTube)',             'https://www.youtube.com/embed/aqz-KE-bpKQ', 'Server 2');
+
+-- ---------- Bố Già (id=2) - phim lẻ, CHỈ Server 1 (demo chip tự ẩn) ----------
 INSERT INTO episodes (movie_id, episode_number, title, embed_url, server_name) VALUES
-(3, 1, 'Tập 1', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
-(3, 2, 'Tập 2', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1');
--- Mắt Biếc (id=1) - phim lẻ
+(2, 1, 'Full', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1');
+
+-- ---------- Hậu Duệ Mặt Trời (id=3) - phim bộ, có 2 server ----------
 INSERT INTO episodes (movie_id, episode_number, title, embed_url, server_name) VALUES
-(1, 1, 'Full', 'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1');
+(3, 1, 'Tập 1',                  'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
+(3, 1, 'Tập 1 (Backup YouTube)', 'https://www.youtube.com/embed/aqz-KE-bpKQ', 'Server 2'),
+(3, 2, 'Tập 2',                  'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
+(3, 2, 'Tập 2 (Backup YouTube)', 'https://www.youtube.com/embed/eRsGyueVLvQ', 'Server 2');
+
+-- ---------- Squid Game (id=4) - phim bộ, có 2 server ----------
+-- Lưu ý: Server 2 chỉ có tập 1 và 2 (demo "missing episode" trên tập 3)
+INSERT INTO episodes (movie_id, episode_number, title, embed_url, server_name) VALUES
+(4, 1, 'Tập 1 - Đèn Đỏ Đèn Xanh',                  'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
+(4, 1, 'Tập 1 - Đèn Đỏ Đèn Xanh (Backup YouTube)', 'https://www.youtube.com/embed/aqz-KE-bpKQ', 'Server 2'),
+(4, 2, 'Tập 2 - Địa Ngục',                         'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1'),
+(4, 2, 'Tập 2 - Địa Ngục (Backup YouTube)',        'https://www.youtube.com/embed/eRsGyueVLvQ', 'Server 2'),
+(4, 3, 'Tập 3 - Người Cầm Ô',                      'https://www.youtube.com/embed/oqxAJKy0ii4', 'Server 1');
+-- Tập 3 KHÔNG có Server 2 → khi user đang ở tập 3 và bấm "Server 2",
+-- app sẽ tự nhảy về tập 1 của Server 2 (xử lý trong handleSelectServer)
 
 SET FOREIGN_KEY_CHECKS = 1;
 
