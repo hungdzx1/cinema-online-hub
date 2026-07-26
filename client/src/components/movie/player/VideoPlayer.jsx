@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import Hls from 'hls.js';
 import { useAuth } from '../../../context/AuthContext';
 import { historyApi } from '../../../services/historyApi';
 import { ProgressBar } from './ProgressBar';
@@ -107,6 +108,15 @@ export const VideoPlayer = ({
     return embedUrl;
   }, [embedUrl]);
 
+  // HLS (.m3u8) detection — VSMOV thường trả link_m3u8
+  // Browser native <video> không play được .m3u8 trên Chrome/Firefox,
+  // cần hls.js để xử lý. Safari thì native OK.
+  const isHls = useMemo(() => {
+    if (!embedUrl) return false;
+    if (isYoutube || isIframe) return false;
+    return embedUrl.toLowerCase().includes('.m3u8');
+  }, [embedUrl, isYoutube, isIframe]);
+
   // YouTube API Integration
   useEffect(() => {
     if (!isYoutube) return;
@@ -200,7 +210,7 @@ export const VideoPlayer = ({
       }
       setYtPlayer(null);
     };
-  }, [embedUrl, isYoutube, currentEpisodeNumber, movieSlug]);
+  }, [embedUrl, isYoutube, currentEpisodeNumber, movieSlug, totalEpisodes, onSelectEpisode]);
 
   // Sync volume state
   useEffect(() => {
@@ -248,7 +258,7 @@ export const VideoPlayer = ({
       }, 250);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, ytPlayer, isYoutube, duration, currentEpisodeNumber, movieSlug, showAutoplayOverlay]);
+  }, [isPlaying, ytPlayer, isYoutube, duration, currentEpisodeNumber, movieSlug, showAutoplayOverlay, totalEpisodes, isLoggedIn, movieId, episodeId]);
 
   // Load new source / Reset states
   useEffect(() => {
@@ -277,7 +287,83 @@ export const VideoPlayer = ({
     if (isLoggedIn && movieId && episodeId) {
       historyApi.saveProgress(movieId, episodeId).catch(() => {});
     }
-  }, [videoSource, currentEpisodeNumber, movieSlug, isLoggedIn, movieId, episodeId]);
+  }, [videoSource, currentEpisodeNumber, movieSlug, isLoggedIn, movieId, episodeId, playbackRate]);
+
+  // ===== HLS.js integration cho .m3u8 streams =====
+  // VSMOV trả link_m3u8 (HLS) → Chrome/Firefox <video> không play được native.
+  // Dùng hls.js để parse m3u8 → feed các segment MPEG-TS vào video element.
+  // Safari thì native hỗ trợ HLS → không cần hls.js.
+  const hlsRef = useRef(null);
+
+  useEffect(() => {
+    // Chỉ kích hoạt khi source là .m3u8 và không phải YouTube/iframe
+    if (!isHls || !videoSource) return;
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    // Cleanup bất kỳ hls instance cũ trước
+    if (hlsRef.current) {
+      try { hlsRef.current.destroy(); } catch (e) { /* ignore */ }
+      hlsRef.current = null;
+    }
+
+    // Trường hợp 1: Browser hỗ trợ HLS native (Safari/iOS)
+    if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+      videoEl.src = videoSource;
+      return;
+    }
+
+    // Trường hợp 2: Browser không hỗ trợ native (Chrome/Firefox/Edge) → dùng hls.js
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        // Cấu hình tối ưu cho VSMOV streams
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90,
+      });
+      hlsRef.current = hls;
+
+      hls.loadSource(videoSource);
+      hls.attachMedia(videoEl);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setIsLoading(false);
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        // Lỗi fatal → hiện overlay báo lỗi + thử recover
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              // Thử recover network error
+              try { hls.startLoad(); } catch (e) { /* ignore */ }
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              try { hls.recoverMediaError(); } catch (e) { /* ignore */ }
+              break;
+            default:
+              // Lỗi không recover được
+              setHasError(true);
+              setIsLoading(false);
+              try { hls.destroy(); } catch (e) { /* ignore */ }
+              hlsRef.current = null;
+              break;
+          }
+        }
+      });
+    } else {
+      // Browser không hỗ trợ HLS lẫn hls.js (rất hiếm)
+      setHasError(true);
+      setIsLoading(false);
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        try { hlsRef.current.destroy(); } catch (e) { /* ignore */ }
+        hlsRef.current = null;
+      }
+    };
+  }, [isHls, videoSource]);
 
   // Idle timer to auto hide controls
   const handleMouseMove = () => {
@@ -586,8 +672,13 @@ export const VideoPlayer = ({
         />
       ) : (
         <video
+          key={embedUrl}
           ref={videoRef}
-          src={videoSource}
+          /* Khi source là .m3u8: hls.js sẽ set src internally (hoặc set native ở Safari).
+             Khi source là .mp4/.webm: set src trực tiếp.
+             key={embedUrl} ép React remount <video> khi đổi source (vd. đổi server)
+             → tránh state sót lại từ source cũ gây màn hình trắng. */
+          src={isHls ? undefined : videoSource}
           className="html5-video-element"
           onClick={handlePlayPause}
           onDoubleClick={handleDoubleSeek}

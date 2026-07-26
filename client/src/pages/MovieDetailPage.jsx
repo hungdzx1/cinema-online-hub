@@ -189,7 +189,14 @@ export const MovieDetailPage = () => {
       {isWatchMode && (
         <section className="video-player-section">
           <div className="container">
+            {/*
+              ⚠️ key gồm (server + episodeId) buộc React remount toàn bộ VideoPlayer
+              khi user đổi server hoặc đổi tập. Tránh tình trạng state sót lại
+              (ytPlayer, isLoading, refs...) khi chuyển giữa YouTube ↔ iframe ↔ HLS
+              gây màn hình trắng phải F5 mới hiện lại.
+            */}
             <VideoPlayer
+              key={`${activeServer}-${activeEpisode?.id ?? activeEpisodeNumber}`}
               movieId={movie.id}
               episodeId={activeEpisode?.id}
               movieSlug={movie.slug}
@@ -227,13 +234,23 @@ export const MovieDetailPage = () => {
           <div className="movie-detail-grid">
             {/* Left Main contents */}
             <div className="detail-main-col">
-              {/* Episodes listing */}
-              <EpisodeGrid 
-                episodes={episodes}
+              {/* Episodes listing — chỉ hiện tập của server đang chọn để tránh trùng số */}
+              <EpisodeGrid
+                episodes={episodesByServer[activeServer] || []}
                 activeEpisodeNumber={activeEpisode?.episodeNumber || 1}
                 onSelectEpisode={handleSelectEpisode}
                 movieType={movie.type}
               />
+              {/* Subtle hint cho user biết grid này thuộc server nào */}
+              {serverNames.length > 1 && (
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                  margin: '-10px 0 14px 4px',
+                }}>
+                  Hiển thị tập của: <strong style={{ color: 'var(--color-primary)' }}>{activeServer}</strong> · Đổi server ở thanh điều khiển phía trên
+                </div>
+              )}
 
               {/* Technical movie info */}
               <MovieInfo movie={movie} />

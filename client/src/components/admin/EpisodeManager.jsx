@@ -274,6 +274,11 @@ export const EpisodeManager = ({ movieId }) => {
         </div>
       )}
 
+      {/* Form thêm tập mới (render ở top-level, không phụ thuộc có tập hay không)
+          Trước đây form chỉ render trong nhánh `episode-list` khi đã có tập,
+          dẫn tới phim mới tạo (0 tập) bấm "Thêm tập" không thấy form đâu. */}
+      {showForm && !editingEp && renderInlineForm()}
+
       {/* Episode List — gom theo server */}
       {loading ? (
         <div style={{ color: 'var(--text-muted)', padding: 16, fontSize: 14 }}>
@@ -285,8 +290,7 @@ export const EpisodeManager = ({ movieId }) => {
         </div>
       ) : (
         <div className="episode-list">
-          {/* Form thêm tập mới (khi không edit) */}
-          {showForm && !editingEp && renderInlineForm()}
+          {/* (Form thêm mới đã render ở trên — không lặp lại ở đây) */}
 
           {serverNamesOrdered.map((serverName) => {
             const list = episodesByServer[serverName] || [];
