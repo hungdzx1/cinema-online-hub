@@ -962,7 +962,8 @@
   border-radius: var(--radius-md);
 }
 
-.episode-form-inline input {
+.episode-form-inline input,
+.episode-form-inline select {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.08);
@@ -971,9 +972,8 @@
   font-size: 13px;
   font-family: inherit;
   outline: none;
-}
-
   transition: border-color 0.15s;
+}
 
 
 .episode-form-inline input:focus,

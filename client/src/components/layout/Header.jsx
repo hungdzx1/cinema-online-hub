@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../common/SearchInput';
 import { Button } from '../common/Button';
 import { HistoryIcon, BookmarkIcon, LoginIcon, HomeIcon, GridIcon, FilmIcon, StarIcon, FlameIcon } from '../common/Icons';
@@ -54,9 +54,28 @@ export const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, logout, isLoggedIn } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const dropdownRef = useRef(null);
+
+  const currentPath = location.pathname;
+  const currentGenreId = searchParams.get('genreIds');
+  const currentCountry = searchParams.get('country');
+  const currentType = searchParams.get('type');
+  const currentStatus = searchParams.get('status');
+  const currentSortBy = searchParams.get('sortBy');
+
+  const isHomeActive = currentPath === '/' && !currentGenreId && !currentCountry && !currentType && !currentStatus && !currentSortBy;
+  const isGenreActive = Boolean(currentGenreId);
+  const isCountryActive = Boolean(currentCountry);
+  const isPhimLeActive = currentType === 'phim_le';
+  const isPhimBoActive = currentType === 'phim_bo';
+  const isRandomActive = currentPath === '/random';
+  const isOngoingActive = currentStatus === 'ongoing';
+  const isCompletedActive = currentStatus === 'completed';
+  const isTopRatedActive = currentSortBy === 'rating';
 
   // State cho menu thể loại / quốc gia
   const [genres, setGenres] = useState([]);
@@ -490,12 +509,12 @@ export const Header = () => {
       <div className="main-nav">
         <div className="container">
           <ul className="nav-list">
-            <li className="nav-item active">
+            <li className={`nav-item ${isHomeActive ? 'active' : ''}`}>
               <Link to="/"><HomeIcon size={18} /> Trang chủ</Link>
             </li>
 
             {/* Menu Thể Loại (Hover xổ xuống) */}
-            <li className="nav-item has-mega-menu"
+            <li className={`nav-item has-mega-menu ${isGenreActive ? 'active' : ''}`}
                 onMouseEnter={() => setActiveMenu('genres')}
                 onMouseLeave={() => setActiveMenu(null)}>
               <div className="nav-link-trigger">
@@ -503,15 +522,25 @@ export const Header = () => {
               </div>
               {activeMenu === 'genres' && (
                 <div className="mega-menu-box">
-                  {genres.map(g => (
-                    <Link key={g.id} to={`/search?genreIds=${g.id}`} className="mega-menu-item">{g.name}</Link>
-                  ))}
+                  {genres.map(g => {
+                    const isActive = currentGenreId === String(g.id);
+                    return (
+                      <Link
+                        key={g.id}
+                        to={`/search?genreIds=${g.id}`}
+                        className={`mega-menu-item ${isActive ? 'active' : ''}`}
+                        onClick={() => setActiveMenu(null)}
+                      >
+                        {g.name}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </li>
 
             {/* Menu Quốc Gia (Hover xổ xuống) */}
-            <li className="nav-item has-mega-menu"
+            <li className={`nav-item has-mega-menu ${isCountryActive ? 'active' : ''}`}
                 onMouseEnter={() => setActiveMenu('countries')}
                 onMouseLeave={() => setActiveMenu(null)}>
               <div className="nav-link-trigger">
@@ -519,31 +548,41 @@ export const Header = () => {
               </div>
               {activeMenu === 'countries' && (
                 <div className="mega-menu-box">
-                  {mockCountries.map(c => (
-                    <Link key={c.id} to={`/search?country=${c.slug}`} className="mega-menu-item">{c.name}</Link>
-                  ))}
+                  {mockCountries.map(c => {
+                    const isActive = currentCountry === c.slug;
+                    return (
+                      <Link
+                        key={c.id}
+                        to={`/search?country=${c.slug}`}
+                        className={`mega-menu-item ${isActive ? 'active' : ''}`}
+                        onClick={() => setActiveMenu(null)}
+                      >
+                        {c.name}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </li>
 
-            <li className="nav-item">
+            <li className={`nav-item ${isPhimLeActive ? 'active' : ''}`}>
               <Link to="/search?type=phim_le"><FilmIcon size={18} /> Phim Lẻ</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isPhimBoActive ? 'active' : ''}`}>
               <Link to="/search?type=phim_bo"><FlameIcon size={18} /> Phim Bộ</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isRandomActive ? 'active' : ''}`}>
               <Link to="/random" style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
                 <StarIcon size={18} /> Random Phim
               </Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isOngoingActive ? 'active' : ''}`}>
               <Link to="/search?status=ongoing"><FlameIcon size={18} /> Đang Chiếu</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isCompletedActive ? 'active' : ''}`}>
               <Link to="/search?status=completed"><BookmarkIcon size={18} /> Hoàn Thành</Link>
             </li>
-            <li className="nav-item">
+            <li className={`nav-item ${isTopRatedActive ? 'active' : ''}`}>
               <Link to="/search?sortBy=rating"><StarIcon size={18} /> Đánh Giá Cao</Link>
             </li>
           </ul>

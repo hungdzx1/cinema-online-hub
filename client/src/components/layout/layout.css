@@ -14,17 +14,29 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: transparent;
+  background-color: var(--bg-header, #141414);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition:
     background-color 0.3s ease,
     box-shadow 0.3s ease,
     backdrop-filter 0.3s ease;
 }
 
+[data-theme="light"] .header-wrapper {
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .header-wrapper.scrolled {
-  background-color: rgba(26, 26, 26, 0.92);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  background-color: rgba(20, 22, 28, 0.94);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme="light"] .header-wrapper.scrolled {
+  background-color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
 }
 
 /* ----- Header Top ----- */
@@ -279,11 +291,16 @@
 
 /* ----- Main Nav ----- */
 .main-nav {
-  background-color: var(--bg-main);
+  background-color: var(--bg-header, #141414);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   position: relative;
   z-index: 1500;
   overflow: visible;
+}
+
+[data-theme="light"] .main-nav {
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .nav-item.has-mega-menu {
@@ -292,41 +309,96 @@
 
 .mega-menu-box {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(100vw - 32px, 980px);
+  top: 100%;
+  left: 0;
+  width: 480px;
+  max-width: calc(100vw - 32px);
   max-height: 380px;
-  background: rgba(12, 14, 18, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
+  background: rgba(20, 22, 28, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   z-index: 3000;
   animation: dropdownIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
   overflow-y: auto;
+  backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .mega-menu-box {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12) !important;
+}
+
+.mega-menu-box::-webkit-scrollbar {
+  width: 5px;
+}
+.mega-menu-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mega-menu-box::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
+}
+.mega-menu-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
 }
 
 .mega-menu-item {
-  padding: 10px 14px;
-  font-size: 14px;
+  padding: 9px 12px;
+  font-size: 13.5px;
   font-weight: 500;
-  border-radius: 14px;
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
-  transition: all 0.15s ease;
+  border-radius: 10px;
+  color: var(--text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
   text-decoration: none;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+[data-theme="light"] .mega-menu-item {
+  background: #f1f2f6 !important;
+  color: #2f3542 !important;
 }
 
 .mega-menu-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-primary, #ff4757);
-  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
+
+[data-theme="light"] .mega-menu-item:hover {
+  background: #e4e7ed !important;
+  color: #111118 !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+.mega-menu-item:active {
+  transform: scale(0.95);
+}
+
+.mega-menu-item.active {
+  background: var(--color-primary-gradient, linear-gradient(90deg, #ff4757 0%, #ffa502 100%)) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(255, 71, 87, 0.4) !important;
+}
+
+
 
 .nav-list {
   display: flex;
