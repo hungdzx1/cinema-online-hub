@@ -7,13 +7,19 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Tạo "người gửi" — kết nối tới Gmail SMTP
-    // ⚠️ KHÔNG hardcode giá trị thật — luôn đọc từ process.env (file .env)
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD, // App Password 16 ký tự, không phải mật khẩu Gmail thường
+        pass: process.env.MAIL_PASSWORD,
+      },
+      connectionTimeout: 60000,
+      greetingTimeout: 60000,
+      socketTimeout: 60000,
+      tls: {
+        rejectUnauthorized: false,
       },
     });
   }
@@ -24,7 +30,8 @@ export class MailService {
     resetToken: string,
   ): Promise<void> {
     // ⚠️ Đổi link này thành domain FRONTEND thật của bạn khi deploy
-    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     try {
       await this.transporter.sendMail({
