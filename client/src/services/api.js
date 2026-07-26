@@ -1,6 +1,6 @@
 import axios from 'axios';
-
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://laughing-fishstick-5gxwqv9g4vp5c79v5-3000.app.github.dev';
+const BASE_URL = import.meta.env.VITE_API_URL || 'link_codespaces'
+export 
 
 // Khởi tạo instance của axios với các cài đặt chung
 const apiClient = axios.create({
