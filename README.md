@@ -328,7 +328,27 @@ movies ──┬──< episodes
 ![divider](https://capsule-render.vercel.app/api?type=rect&color=0:2b1400,100:f26522&height=3&width=1000)
 
 </div>
+<!-- Demo Section -->
+<div align="center">
 
+<br/>
+
+### 🌐 Live Demo — Đang chạy Production
+
+| | | |
+|:---:|:---:|:---:|
+| **Frontend (Vercel)** | **Backend API (Render)** | **Vite Speed Insights** |
+| <a href="https://cinema-hovy.vercel.app"><img src="https://img.shields.io/badge/cinema--hovy.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Frontend"/></a> | <a href="https://cinema-online-hub.onrender.com"><img src="https://img.shields.io/badge/cinema-online-hub.onrender.com-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Backend"/></a> | <a href="https://cinema-hovy.vercel.app"><img src="https://img.shields.io/badge/⚡%20Speed%20Widget-f26522?style=for-the-badge" alt="Speed"/></a> |
+
+> 💡 **Mở web → góc dưới phải sẽ hiện widget đo tốc độ** (load trang & chuyển trang). Click vào widget để xem chi tiết: thời gian load trang đầu, thời gian chuyển trang, route hiện tại.
+
+</div>
+
+<div align="center">
+
+![divider](https://capsule-render.vercel.app/api?type=rect&color=0:f26522,100:2b1400&height=3&width=1000)
+
+</div>
 ## 📊 Sơ đồ hệ thống
 
 - **Use Case Diagram** — 3 actor kế thừa (Guest → User → Admin), ~23 use case
