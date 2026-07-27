@@ -163,193 +163,117 @@ Hệ thống kiểm soát toàn bộ vòng đời của nội dung phim: từ l�
 
 ```
 cinema-online-hub/
-├── server/                              # Backend — NestJS
-│   └── src/
-│       ├── common/                       # Dùng chung cho mọi module
-│       │   ├── guards/
-│       │   │   ├── jwt-auth.guard.ts      → Xác thực: kiểm tra JWT hợp lệ (Authentication)
-│       │   │   └── roles.guard.ts         → Phân quyền: kiểm tra role Admin/User (Authorization)
-│       │   ├── decorators/
-│       │   │   ├── roles.decorator.ts     → Gắn nhãn @Roles(ADMIN) lên route
-│       │   │   └── current-user.decorator.ts → Lấy nhanh user từ request (@CurrentUser())
-│       │   ├── enums/                     → Hằng số cố định: role, loại phim, trạng thái, loại lỗi
-│       │   └── interfaces/
-│       │       └── jwt-payload.interface.ts → Định nghĩa cấu trúc payload JWT (sub, email, role)
-│       │
-│       ├── mail/
-│       │   ├── mail.module.ts             → Đăng ký MailService cho module khác dùng
-│       │   └── mail.service.ts            → Gửi email quên mật khẩu (Nodemailer)
-│       │
-│       ├── database/
-│       │   ├── schema.sql                 → Lệnh tạo 14 bảng + ràng buộc khóa
-│       │   └── seed.sql                    → Data mẫu (user, phim, thể loại...) để test
-│       │
-│       └── modules/                       # Mỗi thư mục = 1 chức năng nghiệp vụ độc lập
-│           ├── auth/
-│           │   ├── auth.controller.ts     → Nhận request /auth/* (login, register...)
-│           │   ├── auth.service.ts        → Xử lý logic: băm mật khẩu, tạo JWT, so sánh
-│           │   └── auth.strategy.ts       → Giải mã & verify chữ ký JWT (Passport)
-│           ├── users/                     → Xem/sửa hồ sơ cá nhân, tìm user theo email
-│           ├── movies/                    → CRUD phim, tìm kiếm, lọc, random
-│           ├── episodes/                  → CRUD tập phim, skip intro, chuyển tập
-│           ├── genres/ · countries/        → CRUD danh mục thể loại/quốc gia
-│           ├── comments/                  → Bình luận (lọc XSS bằng sanitize-html)
-│           ├── ratings/                   → Đánh giá sao 1–10 (upsert)
-│           ├── favorites/ · watchlist/     → Yêu thích / Xem sau (toggle)
-│           ├── watch-history/             → Lưu tiến độ xem, hỗ trợ "xem tiếp"
-│           ├── notifications/             → Thông báo hệ thống
-│           ├── error-reports/             → Người dùng báo lỗi, Admin xử lý
-│           └── admin/                     → Dashboard thống kê, quản lý toàn hệ thống
+├── server/ # Backend — NestJS
+│ └── src/
+│ ├── common/ # Dùng chung cho mọi module
+│ │ ├── guards/
+│ │ │ ├── jwt-auth.guard.ts → Xác thực: kiểm tra JWT hợp lệ (Authentication)
+│ │ │ └── roles.guard.ts → Phân quyền: kiểm tra role Admin/User (Authorization)
+│ │ ├── decorators/
+│ │ │ ├── roles.decorator.ts → Gắn nhãn @Roles(ADMIN) lên route
+│ │ │ └── current-user.decorator.ts → Lấy nhanh user từ request (@CurrentUser())
+│ │ ├── enums/ → Hằng số cố định: role, loại phim, trạng thái, loại lỗi
+│ │ └── interfaces/
+│ │ └── jwt-payload.interface.ts → Định nghĩa cấu trúc payload JWT (sub, email, role)
+│ │
+│ ├── mail/
+│ │ ├── mail.module.ts → Đăng ký MailService cho module khác dùng
+│ │ └── mail.service.ts → Gửi email quên mật khẩu (Nodemailer)
+│ │
+│ ├── database/
+│ │ ├── schema.sql → Lệnh tạo 14 bảng + ràng buộc khóa
+│ │ └── seed.sql → Data mẫu (user, phim, thể loại...) để test
+│ │
+│ └── modules/ # Mỗi thư mục = 1 chức năng nghiệp vụ độc lập
+│ ├── auth/
+│ │ ├── auth.controller.ts → Nhận request /auth/* (login, register...)
+│ │ ├── auth.service.ts → Xử lý logic: băm mật khẩu, tạo JWT, so sánh
+│ │ └── auth.strategy.ts → Giải mã & verify chữ ký JWT (Passport)
+│ ├── users/ → Xem/sửa hồ sơ cá nhân, tìm user theo email
+│ ├── movies/ → CRUD phim, tìm kiếm, lọc, random
+│ ├── episodes/ → CRUD tập phim, skip intro, chuyển tập
+│ ├── genres/ · countries/ → CRUD danh mục thể loại/quốc gia
+│ ├── comments/ → Bình luận (lọc XSS bằng sanitize-html)
+│ ├── ratings/ → Đánh giá sao 1–10 (upsert)
+│ ├── favorites/ · watchlist/ → Yêu thích / Xem sau (toggle)
+│ ├── watch-history/ → Lưu tiến độ xem, hỗ trợ "xem tiếp"
+│ ├── notifications/ → Thông báo hệ thống
+│ ├── error-reports/ → Người dùng báo lỗi, Admin xử lý
+│ └── admin/ → Dashboard thống kê, quản lý toàn hệ thống
 │
-└──client/
-├── .env                                  → Khai báo VITE_API_URL (địa chỉ Backend)
-├── vite.config.js                        → Cấu hình Vite (plugin React, Tailwind...)
-├── index.html                            → File HTML duy nhất, chứa <div id="root">
+└── client/ # Frontend — React + Vite
+├── public/ # File tĩnh (favicon, ảnh)
+│ └── favicon.ico
 │
-├── public/                               → Ảnh/icon tĩnh, không qua build
+├── src/
+│ ├── main.jsx → Điểm khởi đầu: mount <App /> vào #root, tải SpeedInsights
+│ ├── App.jsx → Layout chính: định nghĩa Routes, bọc Provider (Auth, Theme, Toast, Watchlist)
+│ ├── index.css # CSS toàn cục: reset, biến CSS, font, theme sáng/tối
+│ │
+│ ├── pages/ # Mỗi file = 1 trang (route)
+│ │ ├── HomePage.jsx → Trang chủ: HeroBanner, phim trending, phim mới, phim đề xuất
+│ │ ├── MovieDetailPage.jsx → Chi tiết phim: thông tin, tập phim, bình luận, đánh giá, liên quan
+│ │ ├── SearchPage.jsx → Tìm kiếm phim: thanh search, lọc theo thể loại/quốc gia/năm
+│ │ ├── LoginPage.jsx → Đăng nhập / Đăng ký (tab chuyển đổi)
+│ │ ├── ProfilePage.jsx → Hồ sơ cá nhân: sửa avatar, tên, đổi mật khẩu
+│ │ ├── WatchlistPage.jsx → Danh sách phim yêu thích / Xem sau
+│ │ ├── RandomPage.jsx → Xem phim ngẫu nhiên (random movie)
+│ │ ├── ResetPasswordPage.jsx → Quên mật khẩu: nhập email → nhận link reset
+│ │ └── ForbiddenPage.jsx → Trang 403: khi user truy cập route bị cấm
+│ │
+│ ├── pages/admin/ # Trang quản trị (chỉ Admin)
+│ │ ├── DashboardPage.jsx → Dashboard: thống kê user, phim, lượt xem, biểu đồ
+│ │ ├── MoviesPage.jsx → Quản lý phim: thêm/sửa/xóa phim, danh sách
+│ │ ├── UsersPage.jsx → Quản lý user: danh sách, khóa/mở, phân quyền
+│ │ ├── CategoriesPage.jsx → Quản lý thể loại: CRUD thể loại phim
+│ │ ├── CommentsPage.jsx → Quản lý bình luận: duyệt, xóa bình luận
+│ │ └── NotificationsPage.jsx → Thông báo + Báo lỗi: xem/xử lý báo lỗi từ user
+│ │
+│ ├── components/ # Component tái sử dụng
+│ │ ├── layout/ # Layout chính của trang
+│ │ │ ├── Navbar.jsx → Thanh điều hướng: logo, menu, search, theme toggle, avatar
+│ │ │ └── Footer.jsx → Chân trang: thông tin, link liên kết
+│ │ ├── common/ # Component dùng chung nhiều trang
+│ │ │ ├── MovieCard.jsx → Thẻ phim: poster, tên, đánh giá, nút xem
+│ │ │ ├── MovieGrid.jsx → Lưới phim: responsive grid, skeleton loading
+│ │ │ ├── LoadingSkeleton.jsx → Skeleton placeholder khi đang tải
+│ │ │ └── SpeedWidget.jsx → Widget đo tốc độ load (hiện góc dưới phải)
+│ │ ├── home/ # Component riêng trang chủ
+│ │ │ ├── HeroBanner.jsx → Banner lớn: phim nổi bật, nút Xem ngay
+│ │ │ └── MovieSection.jsx → Section phim (trending, mới, đề xuất)
+│ │ ├── movie/ # Component riêng trang chi tiết phim
+│ │ │ ├── EpisodeList.jsx → Danh sách tập phim
+│ │ │ ├── CommentSection.jsx → Bình luận phim
+│ │ │ └── RatingSection.jsx → Đánh giá sao
+│ │ └── admin/ # Component riêng trang admin
+│ │ ├── AdminLayout.jsx → Sidebar admin: menu điều hướng trang quản trị
+│ │ ├── AdminRoute.jsx → Guard: chặn user thường truy cập /admin/*
+│ │ └── StatCard.jsx → Thẻ thống kê: tổng user, phim, lượt xem...
+│ │
+│ ├── context/ # React Context (state toàn cục)
+│ │ ├── AuthContext.jsx → Quản lý đăng nhập: user, token, login, logout
+│ │ ├── ThemeContext.jsx → Chế độ Sáng/Tối: lưu preference vào localStorage
+│ │ ├── ToastContext.jsx → Thông báo popup: success, error, warning, info
+│ │ └── WatchlistContext.jsx → Danh sách yêu thích: toggle add/remove phim
+│ │
+│ ├── services/ # Giao tiếp với Backend
+│ │ └── api.js → Axios instance: BASE_URL từ VITE_API_URL, interceptors (token)
+│ │
+│ └── hooks/ # Custom hooks
+│ ├── useAuth.js → Lấy user hiện tại từ AuthContext
+│ └── useMovies.js → Fetch + filter danh sách phim
 │
-└── src/
-    ├── App.jsx                           → Bọc BrowserRouter + AppRoutes
-    ├── main.jsx                          → Điểm khởi động, bọc AppProviders
-    ├── assets/                           → Ảnh mặc định của Vite (hero, logo)
-    │
-    ├── config/
-    │   └── constants.js                  → Hằng số khớp enum Backend (loại phim, sortBy, role...)
-    │
-    ├── lib/
-    │   ├── axiosClient.js                → Axios instance, tự gắn JWT vào mọi request
-    │   └── queryClient.js                → Cấu hình cache TanStack (staleTime, retry...)
-    │
-    ├── providers/
-    │   ├── AuthContext.js                → Context object quản lý đăng nhập (thuần)
-    │   ├── AuthProvider.jsx              → Component cung cấp user/login/logout
-    │   ├── useAuth.js                    → Hook đọc AuthContext
-    │   ├── ThemeContext.js               → Context object cho Dark/Light mode
-    │   ├── ThemeProvider.jsx             → Component quản lý theme, lưu localStorage
-    │   ├── useTheme.js                   → Hook đọc ThemeContext
-    │   ├── QueryProvider.jsx             → Bọc QueryClientProvider + Devtools
-    │   └── AppProviders.jsx              → Gộp Auth + Theme + Query Provider
-    │
-    ├── routes/
-    │   ├── AppRoutes.jsx                 → Khai báo toàn bộ URL của app
-    │   ├── ProtectedRoute.jsx            → Chặn trang cần đăng nhập
-    │   └── AdminRoute.jsx                → Chặn trang cần quyền Admin
-    │
-    ├── shared/
-    │   ├── components/
-    │   │   └── ThemeToggle.jsx           → Nút bật/tắt Dark-Light mode dùng chung
-    │   ├── layout/
-    │   │   ├── Header.jsx                → Thanh điều hướng trên cùng
-    │   │   ├── Footer.jsx                → Chân trang dùng chung
-    │   │   ├── MainLayout.jsx            → Khung layout cho trang User (bọc Header/Footer)
-    │   │   └── AdminLayout.jsx           → Khung layout riêng cho khu vực Admin (sidebar...)
-    │   └── utils/
-    │       └── reportWebVitals.js        → Đo chỉ số hiệu năng (CLS, LCP, INP...)
-    │
-    └── features/
-        │
-        ├── auth/
-        │   ├── api/authApi.js            → Gọi API: login, register, forgot/reset password
-        │   ├── hooks/
-        │   │   ├── useLogin.js           → useMutation đăng nhập
-        │   │   ├── useRegister.js        → useMutation đăng ký
-        │   │   ├── useForgotPassword.js  → useMutation gửi email quên mật khẩu
-        │   │   ├── useResetPassword.js   → useMutation đặt lại mật khẩu
-        │   │   ├── useChangePassword.js  → useMutation đổi mật khẩu
-        │   │   └── useProfile.js         → useQuery lấy thông tin hồ sơ cá nhân
-        │   ├── pages/
-        │   │   ├── LoginPage.jsx
-        │   │   ├── RegisterPage.jsx
-        │   │   ├── ForgotPasswordPage.jsx
-        │   │   ├── ResetPasswordPage.jsx
-        │   │   └── ProfilePage.jsx       → Trang xem/sửa hồ sơ cá nhân
-        │   ├── queries.js                → Query Key Factory của auth
-        │   └── index.js                  → Cửa export công khai
-        │
-        ├── movies/
-        │   ├── api/
-        │   │   ├── moviesApi.js          → Gọi API phim (list, detail, filter, random, CRUD)
-        │   │   └── episodesApi.js        → Gọi API tập phim (list theo phim, CRUD)
-        │   ├── hooks/
-        │   │   ├── useMovies.js          → useQuery danh sách phim
-        │   │   ├── useMovieDetail.js     → useQuery chi tiết 1 phim
-        │   │   ├── useMovieFilter.js     → useInfiniteQuery bộ lọc (phân trang)
-        │   │   ├── useRandomMovie.js     → useQuery random nhanh
-        │   │   ├── useRandomAdvanced.js  → useQuery random nâng cao
-        │   │   ├── useMovieMutations.js  → useMutation tạo/sửa/xóa phim (Admin)
-        │   │   └── useEpisodes.js        → useQuery danh sách tập phim
-        │   ├── pages/
-        │   │   ├── HomePage.jsx
-        │   │   ├── MovieDetailPage.jsx
-        │   │   ├── WatchPage.jsx         → Trang xem phim (player, skip intro, chuyển tập)
-        │   │   ├── FilterPage.jsx
-        │   │   ├── SearchPage.jsx        → Trang tìm kiếm theo từ khóa
-        │   │   ├── RandomPage.jsx
-        │   │   └── NotFoundPage.jsx      → Trang 404
-        │   ├── queries.js
-        │   └── index.js
-        │
-        ├── comments/
-        │   ├── api/commentsApi.js        → Gọi API bình luận
-        │   ├── hooks/
-        │   │   ├── useComments.js        → useQuery danh sách bình luận
-        │   │   └── useCommentMutations.js → useMutation thêm/xóa bình luận
-        │   ├── queries.js
-        │   └── index.js
-        │
-        ├── interactions/                 → Gom: yêu thích, đánh giá, xem sau, lịch sử
-        │   ├── api/
-        │   │   ├── favoritesApi.js
-        │   │   ├── ratingsApi.js
-        │   │   ├── watchlistApi.js
-        │   │   ├── watchHistoryApi.js
-        │   │   └── commentsApi.js        → (dùng riêng cho trang tương tác, nếu cần)
-        │   ├── hooks/
-        │   │   ├── useFavorites.js       → useMutation toggle + Optimistic Update
-        │   │   ├── useRating.js          → useMutation đánh giá (upsert)
-        │   │   ├── useWatchlist.js       → useMutation toggle xem sau
-        │   │   ├── useWatchHistory.js    → useQuery/useMutation lịch sử xem
-        │   │   └── useComments.js
-        │   ├── pages/
-        │   │   ├── FavoritesPage.jsx
-        │   │   ├── WatchlistPage.jsx
-        │   │   └── HistoryPage.jsx
-        │   ├── queries.js
-        │   └── index.js
-        │
-        ├── notifications/
-        │   ├── api/notificationsApi.js
-        │   ├── hooks/useNotifications.js
-        │   ├── queries.js
-        │   └── index.js
-        │
-        ├── reports/                      → Báo lỗi phim (phía User gửi)
-        │   ├── api/reportsApi.js         → Gọi API tạo báo lỗi
-        │   ├── hooks/useReports.js        → useMutation gửi báo lỗi
-        │   ├── queries.js
-        │   └── index.js
-        │
-        └── admin/
-            ├── api/
-            │   ├── adminApi.js           → API thống kê Dashboard
-            │   ├── adminCommentsApi.js   → API duyệt/ẩn bình luận
-            │   ├── adminMetaApi.js       → API quản lý Thể loại/Quốc gia
-            │   └── usersApi.js           → API quản lý người dùng (khóa/mở)
-            ├── hooks/
-            │   ├── useAdmin.js           → useQuery số liệu Dashboard
-            │   ├── useAdminComments.js   → useQuery/useMutation duyệt bình luận
-            │   ├── useAdminMeta.js       → useMutation CRUD thể loại/quốc gia
-            │   ├── useUsers.js           → useQuery/useMutation quản lý user
-            │   ├── useMovieMutations.js  → CRUD phim (phía Admin)
-            │   └── useEpisodeMutations.js → CRUD tập phim (phía Admin)
-            └── pages/
-                ├── DashboardPage.jsx
-                ├── MovieManagePage.jsx
-                ├── CommentManagePage.jsx
-                ├── GenreManagePage.jsx
-                ├── CountryManagePage.jsx
-                ├── UserManagePage.jsx
-                └── ReportManagePage.jsx  → Xem/xử lý báo lỗi từ user
+├── .env → Biến môi trường (gitignored): VITE_API_URL=https://cinema-online-hub.onrender.com
+├── .env.local → Biến môi trường local dev (gitignored)
+├── .nvmrc → Pin Node 22 (Vercel dùng để chọn Node version)
+├── .gitignore → Ignore: .env, .env.local, node_modules, dist
+├── vercel.json # Cấu hình Vercel: build command, output dir, SPA rewrites
+├── vite.config.js # Cấu hình Vite: proxy dev, cssMinify esbuild
+└── package.json # Dependencies: react, react-router-dom, axios, @vercel/speed-insights...
+
+text
+
+
 ```
 
 </details>
