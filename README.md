@@ -455,7 +455,8 @@ movies ──┬──< episodes
 
 ---
 
-### 📸 Demo sản phẩm
+### 📸 Demo sản phẩm : https://cinema-hovy.vercel.app/
+ 💡 **Mở web; vì deploy bakend lên render nên phải chờ 5-20s cho web cập nhtj dữ liệu → góc dưới phải sẽ hiện widget đo tốc độ** (load trang & chuyển trang). Click vào widget để xem chi tiết: thời gian load trang đầu, thời gian chuyển trang, route hiện tại.
 
 #### 🛠️ Trang chủ Admin — Dashboard quản trị
 
