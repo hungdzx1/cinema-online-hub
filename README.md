@@ -353,6 +353,7 @@ movies ──┬──< episodes
 
 - **Use Case Diagram** — 3 actor kế thừa (Guest → User → Admin), ~23 use case
 - **Class Diagram** — 12 Entity + RefreshToken, quan hệ 1-n / n-n / self-reference
+      ![Sơ đồ lớp](Class_Diagram.png)
 - **Activity Diagram** — Đăng ký/Đăng nhập · Xem phim · Quên mật khẩu
 - **Sequence Diagram** — Luồng xác thực JWT (Authentication → Authorization)
 - **Component Diagram** — Kiến trúc 3-tier & Module Dependency
