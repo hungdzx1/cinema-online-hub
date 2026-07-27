@@ -546,11 +546,11 @@ Frontend chạy tại `http://localhost:5173`, Backend tại `http://localhost:3
 
 <div align="center">
 
-| Thành viên | MSSV |
-|-----------|------|
-| Trần Quốc Việt Hùng | 24100015 |
-| Bùi Quang Hưng | 24100129 |
-| Trần Phương Nam | 24100511 |
+| Thành viên | MSSV | Tài khoản GitHub |
+|-----------|------|------------------|
+| Trần Quốc Việt Hùng | 24100015 | hung123-alt |
+| Bùi Quang Hưng | 24100129 | hungdzx1 |
+| Trần Phương Nam | 24100511 | 24100511-jpg |
 
 
 
