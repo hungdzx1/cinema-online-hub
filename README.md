@@ -144,7 +144,6 @@ Hệ thống kiểm soát toàn bộ vòng đời của nội dung phim: từ l�
 | **Mã hóa** | Bcrypt | Salt rounds = 12, không lưu plain-text |
 | **Bảo mật** | sanitize-html · @nestjs/throttler | Chống XSS · Rate Limiting 20 req/60s/IP |
 | **Frontend** | React (Vite) | Kiến trúc Feature-based (api/hooks/pages theo từng tính năng) |
-| **Server State** | TanStack Query v5 | Cache, Optimistic Update, Infinite Query (phân trang) |
 | **HTTP Client** | Axios + Interceptor | Tự động gắn JWT, tự xử lý 401 (redirect login) |
 | **Routing** | React Router v6 | Lazy loading, Protected/Admin Route Guard |
 | **Email** | Nodemailer (Gmail SMTP) | Gửi link đặt lại mật khẩu |
