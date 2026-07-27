@@ -437,7 +437,7 @@ movies ──┬──< episodes
 
 #### 📝 Đăng ký (Register)
 
-![Đăng ký](DangKy.drawio.png)
+![Đăng ký](ĐangKy.drawio.png)
 
 #### 🔑 Quên mật khẩu (Forgot Password)
 
