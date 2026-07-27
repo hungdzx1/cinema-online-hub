@@ -546,9 +546,11 @@ Frontend chạy tại `http://localhost:5173`, Backend tại `http://localhost:3
 
 <div align="center">
 
-| Thành viên | MSSV | Vai trò |
-|-----------|------|---------|
-| **Nhóm 4** | — | Backend · Frontend · Database · Bảo mật |
+| Thành viên | MSSV |
+|-----------|------|
+| Trần Quốc Việt Hùng | 24100015 |
+| Bùi Quang Hưng | 24100129 |
+| Trần Phương Nam | 24100511 |
 
 
 
